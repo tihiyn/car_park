@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vehicle List</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: sans-serif;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #aaa;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h2>Список транспортных средств</h2>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Номер</th>
+        <th>Стоимость, ₽</th>
+        <th>Пробег, км</th>
+        <th>Год производства</th>
+        <th>Цвет</th>
+        <th>Доступность</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="v : ${vehicles}">
+        <td th:text="${v.id}"></td>
+        <td th:text="${v.regNum}"></td>
+        <td th:text="${v.price}"></td>
+        <td th:text="${v.mileage}"></td>
+        <td th:text="${v.productionYear}"></td>
+        <td th:text="${v.color}"></td>
+        <td th:text="${v.available ? 'Да' : 'Нет'}"></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
