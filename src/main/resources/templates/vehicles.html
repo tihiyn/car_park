@@ -22,6 +22,12 @@
     <thead>
     <tr>
         <th>ID</th>
+        <th>Название</th>
+        <th>Тип</th>
+        <th>КПП</th>
+        <th>Обём двигателя, л</th>
+        <th>Мощность двигателя, л.с.</th>
+        <th>Число мест</th>
         <th>Номер</th>
         <th>Стоимость, ₽</th>
         <th>Пробег, км</th>
@@ -33,6 +39,12 @@
     <tbody>
     <tr th:each="v : ${vehicles}">
         <td th:text="${v.id}"></td>
+        <td th:text="${v.brand.name}"></td>
+        <td th:text="${v.brand.type}"></td>
+        <td th:text="${v.brand.transmission.value}"></td>
+        <td th:text="${v.brand.engineVolume}"></td>
+        <td th:text="${v.brand.enginePower}"></td>
+        <td th:text="${v.brand.numOfSeats}"></td>
         <td th:text="${v.regNum}"></td>
         <td th:text="${v.price}"></td>
         <td th:text="${v.mileage}"></td>

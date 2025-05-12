@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vehicle List</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: sans-serif;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #aaa;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+<h2>Список брендов</h2>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Название</th>
+        <th>Тип кузова</th>
+        <th>Трансмиссия</th>
+        <th>Объём двигателя</th>
+        <th>Мощность двигателя</th>
+        <th>Количество мест</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="b : ${brands}">
+        <td th:text="${b.id}"></td>
+        <td th:text="${b.name}"></td>
+        <td th:text="${b.type}"></td>
+        <td th:text="${b.transmission.value}"></td>
+        <td th:text="${b.engineVolume}"></td>
+        <td th:text="${b.enginePower}"></td>
+        <td th:text="${b.numOfSeats}"></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
