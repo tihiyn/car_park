@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Vehicle List</title>
+    <title>Vehicle Search</title>
     <style>
         table {
             border-collapse: collapse;
@@ -18,18 +18,7 @@
 </head>
 <body>
 
-<h2 style="text-align: center;">Управление транспортными средствами</h2>
-
-<div style="text-align: center; margin-bottom: 10px;">
-    <form th:action="@{/vehicles/search}" method="get">
-        <input type="text" name="keyword" placeholder="Поиск"/>
-        <button type="submit">Поиск</button>
-    </form>
-</div>
-
-<div style="text-align: center; margin-bottom: 20px;">
-    <a href="/vehicles/new" style="color: blue;"><strong>Добавить новое транспортное средство</strong></a>
-</div>
+<h2 style="text-align: center;">Результат поиска</h2>
 
 <table>
     <thead>
@@ -47,7 +36,6 @@
         <th>Год производства</th>
         <th>Цвет</th>
         <th>Доступность</th>
-        <th>Действие</th>
     </tr>
     </thead>
     <tbody>
@@ -65,11 +53,6 @@
         <td th:text="${v.productionYear}"></td>
         <td th:text="${v.color}"></td>
         <td th:text="${v.available ? 'Да' : 'Нет'}"></td>
-        <td>
-            <a th:href="@{/vehicles/edit(id=${v.id})}" style="color: blue;">Редактировать</a>
-            <span>|</span>
-            <a th:href="@{/vehicles/delete(id=${v.id})}" style="color: blue;">Удалить</a>
-        </td>
     </tr>
     </tbody>
 </table>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Vehicle</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+            padding: 20px;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 8px 16px;
+        }
+
+        /*.back-link {*/
+        /*    margin-top: 20px;*/
+        /*}*/
+    </style>
+</head>
+<body>
+
+<h2>Изменить транспортное средство</h2>
+
+<form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post">
+    <input type="hidden" th:field="*{id}"/>
+
+    <label>Назввние:
+        <input type="text" th:field="*{brand.name}" required>
+    </label>
+
+    <label>Тип:
+        <input type="text" th:field="*{brand.type}" required>
+    </label>
+
+    <label>Трансимиссия
+        <select th:field="*{brand.transmission}" required>
+            <option th:each="type : ${T(com.example.car_park.enums.Transmission).values()}"
+                    th:value="${type}"
+                    th:text="${type.value}">
+            </option>
+        </select>
+    </label>
+
+    <label>Объём двигателя, л
+        <input type="number" step="0.1" th:field="*{brand.engineVolume}" min="0.1" required>
+    </label>
+
+    <label>Мощность двигателя, л.с.:
+        <input type="number" th:field="*{brand.enginePower}" min="1" required>
+    </label>
+
+    <label>Число мест:
+        <input type="number" th:field="*{brand.numOfSeats}" min="1" required>
+    </label>
+
+    <label>Номер:
+        <input type="text" th:field="*{regNum}" required>
+    </label>
+
+    <label>Стоимость, ₽:
+        <input type="number" th:field="*{price}" min="0" required>
+    </label>
+
+    <label>Пробег, км:
+        <input type="number" step="1000" th:field="*{mileage}" min="0" required>
+    </label>
+
+    <label>Год производства:
+        <input type="number" th:field="*{productionYear}" min="1900" max="2025" required>
+    </label>
+
+    <label>Цвет:
+        <input type="text" th:field="*{color}" required>
+    </label>
+
+    <label>Доступность:
+        <select th:field="*{available}">
+            <option value="true">Да</option>
+            <option value="false">Нет</option>
+        </select>
+    </label>
+
+    <button type="submit">Сохранить</button>
+</form>
+
+<!--<div class="back-link">-->
+<!--    <a href="/vehicles" style="color: blue;">Back to Vehicle List</a>-->
+<!--</div>-->
+
+</body>
+</html>
