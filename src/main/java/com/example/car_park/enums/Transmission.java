@@ -7,7 +7,8 @@ public enum Transmission {
     AUTOMATIC("Автоматическая"),
     MECHANICAL("Механическая"),
     ROBOTIC("Роботизированная"),
-    VARIATOR("Вариатор");
+    VARIATOR("Вариатор"),
+    NONE(null);
 
     private final String value;
 

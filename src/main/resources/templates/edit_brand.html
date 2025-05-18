@@ -34,10 +34,6 @@
             margin-top: 15px;
             padding: 8px 16px;
         }
-
-        /*.back-link {*/
-        /*    margin-top: 20px;*/
-        /*}*/
     </style>
 </head>
 <body>
@@ -58,6 +54,7 @@
     <label>Трансимиссия
         <select th:field="*{transmission}" required>
             <option th:each="type : ${T(com.example.car_park.enums.Transmission).values()}"
+                    th:if="${type.value != null}"
                     th:value="${type}"
                     th:text="${type.value}">
             </option>
@@ -78,10 +75,6 @@
 
     <button type="submit">Сохранить</button>
 </form>
-
-<!--<div class="back-link">-->
-<!--    <a href="/vehicles" style="color: blue;">Back to Vehicle List</a>-->
-<!--</div>-->
 
 </body>
 </html>

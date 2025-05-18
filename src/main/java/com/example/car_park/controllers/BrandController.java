@@ -17,26 +17,26 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class BrandController {
     private final BrandService brandService;
 
-    @GetMapping()
-    public String getVehicles(Model model) {
+    @GetMapping("")
+    public String getBrands(Model model) {
         model.addAttribute("brands", brandService.findAll());
         return "brands";
     }
 
     @GetMapping("/new")
-    public String createVehicle(Model model) {
+    public String createBrand(Model model) {
         model.addAttribute("brand", new Brand());
         return "new_brand";
     }
 
     @PostMapping("/save")
-    public String saveVehicle(@ModelAttribute Brand brand) {
+    public String saveBrand(@ModelAttribute Brand brand) {
         brandService.save(brand);
         return "redirect:/brands";
     }
 
     @GetMapping("/edit")
-    public String editVehicle(@RequestParam Long id, Model model) {
+    public String editBrand(@RequestParam Long id, Model model) {
         Brand brand = brandService.find(id);
         if (brand == null) {
             return "redirect:/brands";
@@ -47,13 +47,13 @@ public class BrandController {
     }
 
     @GetMapping("/delete")
-    public String deleteVehicle(@RequestParam Long id) {
+    public String deleteBrand(@RequestParam Long id) {
         brandService.delete(id);
         return "redirect:/brands";
     }
 
     @GetMapping("/search")
-    public String searchVehicle(@RequestParam String keyword, Model model) {
+    public String searchBrand(@RequestParam String keyword, Model model) {
         model.addAttribute("brands", brandService.findByKeyword(keyword));
         return "search_brands";
     }

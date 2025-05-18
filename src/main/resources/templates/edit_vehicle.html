@@ -47,33 +47,13 @@
 <form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post">
     <input type="hidden" th:field="*{id}"/>
 
-    <label>Назввние:
-        <input type="text" th:field="*{brand.name}" required>
-    </label>
-
-    <label>Тип:
-        <input type="text" th:field="*{brand.type}" required>
-    </label>
-
-    <label>Трансимиссия
-        <select th:field="*{brand.transmission}" required>
-            <option th:each="type : ${T(com.example.car_park.enums.Transmission).values()}"
-                    th:value="${type}"
-                    th:text="${type.value}">
+    <label>Бренд
+        <select th:field="*{brand}" required>
+            <option th:each="brand: ${brands}"
+                    th:value="${brand.id}"
+                    th:text="${brand.name}">
             </option>
         </select>
-    </label>
-
-    <label>Объём двигателя, л
-        <input type="number" step="0.1" th:field="*{brand.engineVolume}" min="0.1" required>
-    </label>
-
-    <label>Мощность двигателя, л.с.:
-        <input type="number" th:field="*{brand.enginePower}" min="1" required>
-    </label>
-
-    <label>Число мест:
-        <input type="number" th:field="*{brand.numOfSeats}" min="1" required>
     </label>
 
     <label>Номер:

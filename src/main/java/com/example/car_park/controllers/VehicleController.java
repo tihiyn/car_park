@@ -1,6 +1,7 @@
 package com.example.car_park.controllers;
 
 import com.example.car_park.dao.model.Vehicle;
+import com.example.car_park.service.BrandService;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class VehicleController {
     private final VehicleService vehicleService;
+    private final BrandService brandService;
 
     @GetMapping()
     public String getVehicles(Model model) {
@@ -26,6 +28,7 @@ public class VehicleController {
     @GetMapping("/new")
     public String createVehicle(Model model) {
         model.addAttribute("vehicle", new Vehicle());
+        model.addAttribute("brands", brandService.findAll());
         return "new_vehicle";
     }
 
@@ -43,6 +46,7 @@ public class VehicleController {
         }
 
         model.addAttribute("vehicle", vehicle);
+        model.addAttribute("brands", brandService.findAll());
         return "edit_vehicle";
     }
 

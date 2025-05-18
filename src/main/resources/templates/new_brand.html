@@ -56,6 +56,7 @@
     <label>Трансмиссия
         <select th:field="*{transmission}" required>
             <option th:each="type : ${T(com.example.car_park.enums.Transmission).values()}"
+                    th:if="${type.value != null}"
                     th:value="${type}"
                     th:text="${type.value}">
             </option>

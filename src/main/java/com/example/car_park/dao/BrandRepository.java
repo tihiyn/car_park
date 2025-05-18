@@ -1,13 +1,11 @@
 package com.example.car_park.dao;
 
 import com.example.car_park.dao.model.Brand;
-import com.example.car_park.enums.Transmission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface BrandRepository extends JpaRepository<Brand, Long> {
     @Query(value = "SELECT b FROM Brand b WHERE cast(b.id as string) = :keyword"
@@ -18,11 +16,4 @@ public interface BrandRepository extends JpaRepository<Brand, Long> {
             + " OR cast(b.enginePower as string) = :keyword"
             + " OR cast(b.numOfSeats as string) = :keyword")
     List<Brand> findByKeyword(@Param("keyword") String keyword);
-
-    Optional<Brand> findBrandByNameAndTypeAndTransmissionAndEngineVolumeAndEnginePowerAndNumOfSeats(String name,
-                                                                                                   String type,
-                                                                                                   Transmission transmission,
-                                                                                                   Double engineVolume,
-                                                                                                   Integer enginePower,
-                                                                                                   Integer numOfSeats);
 }
