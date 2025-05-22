@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Brand</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+            padding: 20px;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Изменить бренд</h2>
+
+<form th:action="@{/brands/save}" th:object="${brand}" method="post">
+    <input type="hidden" th:field="*{id}"/>
+
+    <label>Назввние:
+        <input type="text" th:field="*{name}" required>
+    </label>
+
+    <label>Тип:
+        <input type="text" th:field="*{type}" required>
+    </label>
+
+    <label>Трансимиссия
+        <select th:field="*{transmission}" required>
+            <option th:each="type : ${T(com.example.car_park.enums.Transmission).values()}"
+                    th:if="${type.value != null}"
+                    th:value="${type}"
+                    th:text="${type.value}">
+            </option>
+        </select>
+    </label>
+
+    <label>Объём двигателя, л
+        <input type="number" step="0.1" th:field="*{engineVolume}" min="0.1" required>
+    </label>
+
+    <label>Мощность двигателя, л.с.:
+        <input type="number" th:field="*{enginePower}" min="1" required>
+    </label>
+
+    <label>Число мест:
+        <input type="number" th:field="*{numOfSeats}" min="1" required>
+    </label>
+
+    <button type="submit">Сохранить</button>
+</form>
+
+</body>
+</html>

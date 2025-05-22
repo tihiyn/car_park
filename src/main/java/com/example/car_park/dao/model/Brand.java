@@ -10,11 +10,13 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
 @Entity
 @Getter
+@Setter
 public class Brand {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

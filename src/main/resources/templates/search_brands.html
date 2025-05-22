@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Brand List</title>
+    <title>Brand Search</title>
     <style>
         table {
             border-collapse: collapse;
@@ -18,18 +18,7 @@
 </head>
 <body>
 
-<h2 style="text-align: center;">Управление брендами</h2>
-
-<div style="text-align: center; margin-bottom: 10px;">
-    <form th:action="@{/brands/search}" method="get">
-        <input type="text" name="keyword" placeholder="Поиск"/>
-        <button type="submit">Поиск</button>
-    </form>
-</div>
-
-<div style="text-align: center; margin-bottom: 20px;">
-    <a href="/brands/new" style="color: blue;"><strong>Добавить новый бренд</strong></a>
-</div>
+<h2 style="text-align: center;">Результат поиска</h2>
 
 <table>
     <thead>
@@ -41,7 +30,6 @@
         <th>Объём двигателя, л</th>
         <th>Мощность двигателя, л.с.</th>
         <th>Число мест</th>
-        <th>Действие</th>
     </tr>
     </thead>
     <tbody>
@@ -53,11 +41,6 @@
         <td th:text="${b.engineVolume}"></td>
         <td th:text="${b.enginePower}"></td>
         <td th:text="${b.numOfSeats}"></td>
-        <td>
-            <a th:href="@{/brands/edit(id=${b.id})}" style="color: blue;">Редактировать</a>
-            <span>|</span>
-            <a th:href="@{/brands/delete(id=${b.id})}" style="color: blue;">Удалить</a>
-        </td>
     </tr>
     </tbody>
 </table>
