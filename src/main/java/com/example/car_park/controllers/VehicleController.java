@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/vehicles")
+@RequestMapping("/api/vehicles")
 @RequiredArgsConstructor
 public class VehicleController {
     private final VehicleService vehicleService;
