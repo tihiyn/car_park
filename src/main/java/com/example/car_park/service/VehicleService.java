@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,7 +40,7 @@ public class VehicleService {
     public List<VehicleDto> findAllForRest() {
         return vehicleRepository.findAll().stream()
                 .map(vehicleMapper::vehicleToVehicleDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public VehicleDto findForRest(Long id) {
