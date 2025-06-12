@@ -2,6 +2,7 @@ package com.example.car_park.dao.model;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,4 +32,6 @@ public class Enterprise {
     private List<Vehicle> vehicles;
     @OneToMany(mappedBy = "enterprise", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Driver> drivers;
+    @ManyToMany(mappedBy = "managedEnterprises")
+    private List<Manager> managers;
 }

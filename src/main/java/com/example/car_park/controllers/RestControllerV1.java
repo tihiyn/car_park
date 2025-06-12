@@ -10,9 +10,11 @@ import com.example.car_park.service.EnterpriseService;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -30,21 +32,22 @@ public class RestControllerV1 {
     }
 
     @GetMapping({"/vehicles", "/vehicles/{id}"})
-    public ResponseEntity<?> getVehicles(@PathVariable(required = false) Long id) {
+    public ResponseEntity<?> getVehicles(@AuthenticationPrincipal User user,
+                                         @PathVariable(required = false) Long id) {
         if (id == null) {
-            return ResponseEntity.ok(vehicleService.findAllForRest());
+            return ResponseEntity.ok(vehicleService.findAllForRest(user));
         }
 
         return ResponseEntity.ok(vehicleService.findForRest(id));
     }
 
     @GetMapping("/enterprises")
-    public List<EnterpriseDto> getEnterprises() {
-        return enterpriseService.findAllEnterprises();
+    public List<EnterpriseDto> getEnterprises(@AuthenticationPrincipal User user) {
+        return enterpriseService.findAllEnterprises(user);
     }
 
     @GetMapping("/drivers")
-    public List<DriverDto> getDrivers() {
-        return driverService.findAll();
+    public List<DriverDto> getDrivers(@AuthenticationPrincipal User user) {
+        return driverService.findAll(user);
     }
 }
