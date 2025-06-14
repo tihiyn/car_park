@@ -22,7 +22,9 @@
 
 <div style="text-align: center; margin-bottom: 10px;">
     <form th:action="@{/vehicles/search}" method="get">
-        <input type="text" name="keyword" placeholder="Поиск"/>
+        <label>
+            <input type="text" name="keyword" placeholder="Поиск"/>
+        </label>
         <button type="submit">Поиск</button>
     </form>
 </div>
