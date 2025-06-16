@@ -13,6 +13,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 @Table(name = "managers")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Manager {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

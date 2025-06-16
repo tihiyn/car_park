@@ -8,12 +8,12 @@
 <div th:if="${param.error}">
   Неверное имя пользователя или пароль
 </div>
-<form th:action="@{/login}" method="post">
+<form th:action="@{/auth/login}" method="post" th:object="${userAuthenticationDto}">
   <div>
-    <label>Имя пользователя: <input type="text" name="username"/></label>
+    <label>Имя пользователя: <input type="text" th:field="*{username}"/></label>
   </div>
   <div>
-    <label>Пароль: <input type="password" name="password"/></label>
+    <label>Пароль: <input type="password" th:field="*{password}"/></label>
   </div>
   <div>
     <input type="submit" value="Войти"/>

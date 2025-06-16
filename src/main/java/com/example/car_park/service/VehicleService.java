@@ -3,10 +3,10 @@ package com.example.car_park.service;
 import com.example.car_park.controllers.dto.response.VehicleDto;
 import com.example.car_park.dao.VehicleRepository;
 import com.example.car_park.dao.mapper.VehicleMapper;
+import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 

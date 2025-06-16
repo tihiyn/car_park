@@ -2,8 +2,8 @@ package com.example.car_park.service;
 
 import com.example.car_park.dao.UserRepository;
 import com.example.car_park.dao.model.Manager;
+import com.example.car_park.dao.model.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 

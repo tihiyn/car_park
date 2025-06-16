@@ -9,12 +9,19 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
-public class User {
+@Accessors(chain = true)
+public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,4 +32,9 @@ public class User {
 
     @OneToOne(mappedBy = "user")
     private Manager manager;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
 }
