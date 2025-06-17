@@ -2,8 +2,8 @@ package com.example.car_park.service;
 
 import com.example.car_park.controllers.dto.response.DriverDto;
 import com.example.car_park.dao.mapper.DriverMapper;
+import com.example.car_park.dao.model.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
