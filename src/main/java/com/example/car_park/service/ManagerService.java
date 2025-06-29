@@ -13,6 +13,7 @@ public class ManagerService {
     private final UserRepository userRepository;
 
     public Manager getManagerByUser(User user) {
+        // TODO: подумать над исключением
         return userRepository.findByUsername(user.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден")).getManager();
     }

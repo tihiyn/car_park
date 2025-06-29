@@ -37,7 +37,7 @@ public class BrandController {
 
     @GetMapping("/edit")
     public String editBrand(@RequestParam Long id, Model model) {
-        Brand brand = brandService.find(id);
+        Brand brand = brandService.findById(id);
         if (brand == null) {
             return "redirect:/brands";
         }

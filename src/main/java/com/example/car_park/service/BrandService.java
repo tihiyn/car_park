@@ -5,7 +5,9 @@ import com.example.car_park.dao.BrandRepository;
 import com.example.car_park.dao.mapper.BrandMapper;
 import com.example.car_park.dao.model.Brand;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +26,10 @@ public class BrandService {
         return brandRepository.findAll();
     }
 
-    public Brand find(Long id) {
-        return brandRepository.findById(id).orElse(null);
+    public Brand findById(Long id) {
+        return brandRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        String.format("Бренд с id=%d отсутствует", id)));
     }
 
     public void delete(Long id) {

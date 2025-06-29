@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping("/api/vehicles")
+@RequestMapping("/vehicles")
 @RequiredArgsConstructor
 public class VehicleController {
     private final VehicleService vehicleService;
@@ -40,7 +40,7 @@ public class VehicleController {
 
     @GetMapping("/edit")
     public String editVehicle(@RequestParam Long id, Model model) {
-        Vehicle vehicle = vehicleService.find(id);
+        Vehicle vehicle = vehicleService.findById(id);
         if (vehicle == null) {
             return "redirect:/vehicles";
         }
