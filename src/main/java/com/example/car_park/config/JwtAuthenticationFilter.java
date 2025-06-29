@@ -71,8 +71,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return Arrays.stream(cookies)
-                .map(Cookie::getName)
-                .filter("JWT"::equals)
+                .filter(cookie -> "JWT".equals(cookie.getName()))
+                .map(Cookie::getValue)
                 .findAny().orElse(null);
     }
 }

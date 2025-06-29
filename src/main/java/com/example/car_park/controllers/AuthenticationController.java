@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping(name = "/auth")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
     private final JwtService jwtService;
@@ -26,13 +26,13 @@ public class AuthenticationController {
         return "login";
     }
 
-    @PostMapping("login")
+    @PostMapping("/login")
     public String authenticate(@ModelAttribute UserAuthenticationDto userAuthenticationDto,
                                HttpServletResponse response) {
         User authenticatedUser = authenticationService.authenticate(userAuthenticationDto);
         String jwt = jwtService.generateToken(authenticatedUser);
         response.addCookie(jwtService.addJwtToCookie(jwt));
 
-        return "redirect:/enterprises";
+        return "redirect:/api/enterprises";
     }
 }
