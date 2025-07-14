@@ -69,7 +69,7 @@ public class EnterpriseRestControllerTest {
     @Test
     public void testGetEnterprises() throws Exception {
         when(userDetailsService.loadUserByUsername(user.getUsername())).thenReturn(user);
-        when(enterpriseService.findAllForRest(any())).thenReturn(List.of());
+        when(enterpriseService.findAllForRest(any(), any())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/enterprises")
                         .cookie(new Cookie("JWT", jwtService.generateToken(user))))
