@@ -1,6 +1,9 @@
 package com.example.car_park.dao;
 
+import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.Vehicle;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,4 +24,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
             + " OR cast(v.brand.enginePower as string) = :keyword"
             + " OR cast(v.brand.numOfSeats as string) = :keyword")
     List<Vehicle> findByKeyword(@Param("keyword") String keyword);
+
+    Page<Vehicle> findAllByEnterpriseIn(List<Enterprise> enterprises, Pageable pageable);
 }

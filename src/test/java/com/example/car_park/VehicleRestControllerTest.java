@@ -67,7 +67,7 @@ public class VehicleRestControllerTest {
     @Test
     public void testGetVehicles() throws Exception {
         when(userDetailsService.loadUserByUsername(user.getUsername())).thenReturn(user);
-        when(vehicleService.findAllForRest(any())).thenReturn(List.of());
+        when(vehicleService.findAllForRest(any(), any())).thenReturn(List.of());
 
         mockMvc.perform(get("/api/vehicles")
                         .cookie(new Cookie("JWT", jwtService.generateToken(user))))

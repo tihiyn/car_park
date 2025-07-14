@@ -10,6 +10,7 @@ import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -63,10 +64,13 @@ public class EnterpriseService {
                         String.format("Вы не управляете предприятием с id=%d", id)));
     }
 
-    public List<EnterpriseResponseDto> findAllForRest(User user) {
-        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
+    public List<EnterpriseResponseDto> findAllForRest(User user, Pageable pageable) {
+        return enterpriseRepository.findAllByManagersContaining(managerService.getManagerByUser(user), pageable).stream()
                 .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
                 .toList();
+//        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
+//                .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
+//                .toList();
     }
 
     public Enterprise create(User user, EnterpriseRequestDto enterpriseRequestDto) {

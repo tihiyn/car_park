@@ -10,6 +10,7 @@ import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -113,10 +114,24 @@ public class VehicleService {
                         String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id))));
     }
 
-    public List<VehicleResponseDto> findAllForRest(User user) {
-        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
-                .flatMap(enterprise -> enterprise.getVehicles().stream().map(vehicleMapper::vehicleToVehicleResponseDto))
+    public List<VehicleResponseDto> findAllForRest(User user, Pageable pageable) {
+        System.out.println("Pageable received: page = " + pageable.getPageNumber() +
+                ", size = " + pageable.getPageSize() +
+                ", sort = " + pageable.getSort());
+
+        List<VehicleResponseDto> list = vehicleRepository.findAllByEnterpriseIn(managerService.getManagerByUser(user).getManagedEnterprises(), pageable).getContent()
+                .stream()
+                .map(vehicleMapper::vehicleToVehicleResponseDto)
                 .toList();
+
+        System.out.println(list.size());
+
+        return list;
+
+//        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
+//                .flatMap(enterprise -> enterprise.getVehicles().stream().map(vehicleMapper::vehicleToVehicleResponseDto))
+//
+//                .toList();
     }
 
     public Vehicle create(User user, VehicleRequestDto vehicleRequestDto) {

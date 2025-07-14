@@ -7,7 +7,9 @@ import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,15 +28,15 @@ import java.net.URI;
 @RequestMapping("/api/vehicles")
 @PreAuthorize("hasRole('MANAGER')")
 @RequiredArgsConstructor
-@Slf4j
 public class VehicleRestController {
     private final VehicleService vehicleService;
 
     @GetMapping({"", "/{id}"})
     public ResponseEntity<?> getVehicles(@AuthenticationPrincipal User user,
-                                         @PathVariable(required = false) Long id) {
+                                         @PathVariable(required = false) Long id,
+                                         @PageableDefault(size = 5, sort = "price", direction = Sort.Direction.ASC) Pageable pageable) {
         if (id == null) {
-            return ResponseEntity.ok(vehicleService.findAllForRest(user));
+            return ResponseEntity.ok(vehicleService.findAllForRest(user, pageable));
         }
 
         return ResponseEntity.ok(vehicleService.findByIdForRest(user, id));

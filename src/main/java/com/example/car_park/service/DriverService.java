@@ -6,6 +6,7 @@ import com.example.car_park.dao.mapper.DriverMapper;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,11 +24,18 @@ public class DriverService {
     private final DriverRepository driverRepository;
     private final ManagerService managerService;
 
-    public List<DriverDto> findAllForRest(User user) {
-        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
-                .flatMap(enterprise -> enterprise.getDrivers().stream().map(driverMapper::driverToDriverDto))
+    public List<DriverDto> findAllForRest(User user, Pageable pageable) {
+        return driverRepository.findAllByEnterpriseIn(managerService.getManagerByUser(user).getManagedEnterprises(), pageable)
+                .stream()
+                .map(driverMapper::driverToDriverDto)
                 .toList();
+
+//        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
+//                .flatMap(enterprise -> enterprise.getDrivers().stream().map(driverMapper::driverToDriverDto))
+//                .toList();
     }
+    
+    
 
     public List<Driver> findAllByIds(User user, Set<Long> driverIds) {
         List<Driver> allDrivers = driverRepository.findAllById(driverIds);
@@ -62,5 +70,10 @@ public class DriverService {
         }
 
         return managedDrivers;
+    }
+
+    // TODO реализовать метод
+    public Driver findByIdForRest(User user, Long id) {
+        return null;
     }
 }
