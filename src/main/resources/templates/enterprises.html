@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список предприятий</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+          crossorigin="anonymous">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Список предприятий</h1>
+
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Город</th>
+            <th>Рег. номер</th>
+            <th>Водители</th>
+            <th>Транспорт</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="enterprise : ${enterprises}">
+            <td th:text="${enterprise.id}">1</td>
+            <td th:text="${enterprise.name}">Название</td>
+            <td th:text="${enterprise.city}">Город</td>
+            <td th:text="${enterprise.registrationNumber}">Рег. номер</td>
+            <td>
+                <span th:each="driver : ${enterprise.drivers}" th:text="${driver.lastName + ' ' + driver.firstName}" class="badge bg-primary me-1"></span>
+            </td>
+            <td>
+                <span th:each="vehicle : ${enterprise.vehicles}" th:text="${vehicle.regNum}" class="badge bg-success me-1"></span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
