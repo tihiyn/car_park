@@ -31,13 +31,15 @@ public class Vehicle {
     private String color;
     private boolean isAvailable;
 
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", referencedColumnName = "id", nullable = false)
     private Brand brand;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enterprise_id", referencedColumnName = "id", nullable = false)
     private Enterprise enterprise;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "active_driver_id", referencedColumnName = "id")
+    private Driver activeDriver;
 
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
@@ -46,7 +48,4 @@ public class Vehicle {
             inverseJoinColumns = {@JoinColumn(name = "driver_id")}
     )
     private List<Driver> drivers = new ArrayList<>();
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "active_driver_id", referencedColumnName = "id")
-    private Driver activeDriver;
 }

@@ -44,5 +44,4 @@ public interface EnterpriseMapper {
             @Mapping(target = "managers", ignore = true)
     })
     void enterpriseRequestDtoToEnterprise(EnterpriseRequestDto enterpriseRequestDto, @MappingTarget Enterprise enterprise);
-
 }

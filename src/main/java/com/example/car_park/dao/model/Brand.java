@@ -28,6 +28,7 @@ public class Brand {
     private Double engineVolume;
     private Integer enginePower;
     private Integer numOfSeats;
+
     @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL)
     private List<Vehicle> vehicles;
 }

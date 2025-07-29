@@ -16,6 +16,7 @@ public class VehicleResponseDto {
 
     private Long brandId;
     private Long enterpriseId;
-    private List<Long> driverIds;
     private Long activeDriverId;
+
+    private List<Long> driverIds;
 }

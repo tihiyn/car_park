@@ -1,7 +1,5 @@
 package com.example.car_park.controllers;
 
-
-import com.example.car_park.controllers.dto.response.DriverDto;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.service.DriverService;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/drivers")
@@ -39,7 +35,6 @@ public class DriverRestController {
         if (id == null) {
             return ResponseEntity.ok(driverService.findAllForRest(user, pageable));
         }
-
         return ResponseEntity.ok(driverService.findByIdForRest(user, id));
     }
 }

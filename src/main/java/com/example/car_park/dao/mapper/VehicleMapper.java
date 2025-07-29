@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface VehicleMapper {
-
     @Mappings({
             @Mapping(target = "brandId", source = "vehicle.brand.id"),
             @Mapping(target = "enterpriseId", source = "vehicle.enterprise.id"),

@@ -18,7 +18,6 @@ public class AuthenticationService {
     public User authenticate(UserAuthenticationDto userAuthenticationDto) {
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userAuthenticationDto.getUsername(),
                 userAuthenticationDto.getPassword()));
-
         return userRepository.findByUsername(userAuthenticationDto.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
     }

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService{
     private final UserRepository userRepository;
 
+    // TODO: нет ли дубликата с методом из ManagerService?
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)

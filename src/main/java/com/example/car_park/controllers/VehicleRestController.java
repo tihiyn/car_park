@@ -38,7 +38,6 @@ public class VehicleRestController {
         if (id == null) {
             return ResponseEntity.ok(vehicleService.findAllForRest(user, pageable));
         }
-
         return ResponseEntity.ok(vehicleService.findByIdForRest(user, id));
     }
 
@@ -46,7 +45,6 @@ public class VehicleRestController {
     public ResponseEntity<?> createVehicle(@AuthenticationPrincipal User user,
                                            @Valid @RequestBody VehicleRequestDto vehicleRequestDto) {
         Vehicle crearedVehicle = vehicleService.create(user, vehicleRequestDto);
-
         return ResponseEntity.created(URI.create("/api/vehicles/" + crearedVehicle.getId())).build();
     }
 
@@ -54,9 +52,7 @@ public class VehicleRestController {
     public ResponseEntity<VehicleResponseDto> editVehicle(@AuthenticationPrincipal User user,
                                                           @PathVariable Long id,
                                                           @Valid @RequestBody VehicleRequestDto vehicleRequestDto) {
-
         VehicleResponseDto updatedVehicle = vehicleService.update(user, id, vehicleRequestDto);
-
         return ResponseEntity.ok(updatedVehicle);
     }
 
@@ -64,7 +60,6 @@ public class VehicleRestController {
     public ResponseEntity<?> deleteVehicle(@AuthenticationPrincipal User user,
                                            @PathVariable Long id) {
         vehicleService.delete(user, id);
-
         return ResponseEntity.noContent().build();
     }
 }

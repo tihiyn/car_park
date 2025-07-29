@@ -38,7 +38,6 @@ public class EnterpriseRestController {
         if (id == null) {
             return ResponseEntity.ok(enterpriseService.findAllForRest(user, pageable));
         }
-
         return ResponseEntity.ok(enterpriseService.findByIdForRest(user, id));
     }
 
@@ -46,7 +45,6 @@ public class EnterpriseRestController {
     public ResponseEntity<?> createEnterprise(@AuthenticationPrincipal User user,
                                               @Valid @RequestBody EnterpriseRequestDto enterpriseRequestDto) {
         Enterprise createdEnterprise = enterpriseService.create(user, enterpriseRequestDto);
-
         return ResponseEntity.created(URI.create("/api/enterprises/" + createdEnterprise.getId())).build();
     }
 
@@ -54,9 +52,7 @@ public class EnterpriseRestController {
     public ResponseEntity<EnterpriseResponseDto> editEnterprise(@AuthenticationPrincipal User user,
                                             @PathVariable Long id,
                                             @Valid @RequestBody EnterpriseRequestDto enterpriseRequestDto) {
-
         EnterpriseResponseDto updatedEnterprise = enterpriseService.update(user, id, enterpriseRequestDto);
-
         return ResponseEntity.ok(updatedEnterprise);
     }
 
@@ -64,7 +60,6 @@ public class EnterpriseRestController {
     public ResponseEntity<?> deleteEnterprise(@AuthenticationPrincipal User user,
                                  @PathVariable Long id) {
         enterpriseService.delete(user, id);
-
         return ResponseEntity.noContent().build();
     }
 }
