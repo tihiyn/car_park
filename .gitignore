@@ -33,3 +33,5 @@ build/
 .vscode/
 
 /test.http
+
+/src/main/resources/application.properties
