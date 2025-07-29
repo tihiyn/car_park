@@ -36,6 +36,10 @@ public class Manager {
     @Column(nullable = false)
     private String email;
 
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     @ManyToMany(cascade = CascadeType.ALL)
     @JoinTable(
             name = "manager_enterprise_assignments",
@@ -43,8 +47,4 @@ public class Manager {
             inverseJoinColumns = {@JoinColumn(name = "enterprise_id")}
     )
     private List<Enterprise> managedEnterprises;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
-    private User user;
 }

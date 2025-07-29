@@ -7,6 +7,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+    // TODO проверить, будет ли работать без аргумента
     @ExceptionHandler(BadCredentialsException.class)
     public String handleBadCredentials(RedirectAttributes redirectAttributes) {
         return "redirect:/auth/login?error";

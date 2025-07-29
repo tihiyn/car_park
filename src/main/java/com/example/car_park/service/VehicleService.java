@@ -53,7 +53,6 @@ public class VehicleService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     String.format("Транспортное средство с id=%d отсутствует", id));
         }
-
         return user.getManager().getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getVehicles().stream())
                 .filter(v -> v.getId().equals(id))
@@ -62,50 +61,42 @@ public class VehicleService {
                         String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id)));
     }
 
-    public List<Vehicle> findAll() {
-        return vehicleRepository.findAll();
-    }
-
     public List<Vehicle> findAllByIds(User user, Set<Long> vehicleIds) {
         List<Vehicle> allVehicles = vehicleRepository.findAllById(vehicleIds);
-
         if (allVehicles.size() != vehicleIds.size()) {
             Set<Long> foundedVehicleIds = allVehicles.stream()
                     .map(Vehicle::getId)
                     .collect(Collectors.toSet());
-
             Set<Long> missingVehicleIds = vehicleIds.stream()
                     .filter(id -> !foundedVehicleIds.contains(id))
                     .collect(Collectors.toSet());
-
             throw new ResponseStatusException(NOT_FOUND,
                     String.format("Транспортные средства с id %s отсутствуют", missingVehicleIds));
         }
-
         List<Vehicle> managedVehicles = managerService.getManagerByUser(user)
                 .getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getVehicles().stream())
                 .filter(vehicle -> vehicleIds.contains(vehicle.getId()))
                 .toList();
-
         if (managedVehicles.size() != vehicleIds.size()) {
             Set<Long> unmanagedVehicleIds = vehicleIds.stream()
                     .filter(id -> managedVehicles.stream()
                             .noneMatch(v -> v.getId().equals(id)))
                     .collect(Collectors.toSet());
-
             throw new ResponseStatusException(FORBIDDEN,
                     String.format("Транспортные средства с id %s не относятся к Вашим предприятиям", unmanagedVehicleIds));
         }
-
         return managedVehicles;
+    }
+
+    public List<Vehicle> findAll() {
+        return vehicleRepository.findAll();
     }
 
     public VehicleResponseDto findByIdForRest(User user, Long id) {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         String.format("Транспортное средство с id=%d отсутствует", id)));
-
         return vehicleMapper.vehicleToVehicleResponseDto(user.getManager().getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getVehicles().stream())
                 .filter(v -> v.getId().equals(vehicle.getId()))
@@ -118,16 +109,13 @@ public class VehicleService {
         System.out.println("Pageable received: page = " + pageable.getPageNumber() +
                 ", size = " + pageable.getPageSize() +
                 ", sort = " + pageable.getSort());
-
         List<VehicleResponseDto> list = vehicleRepository.findAllByEnterpriseIn(managerService.getManagerByUser(user).getManagedEnterprises(), pageable).getContent()
                 .stream()
                 .map(vehicleMapper::vehicleToVehicleResponseDto)
                 .toList();
-
         System.out.println(list.size());
-
         return list;
-
+        // TODO удалить устаревший вариант
 //        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
 //                .flatMap(enterprise -> enterprise.getVehicles().stream().map(vehicleMapper::vehicleToVehicleResponseDto))
 //
@@ -156,17 +144,14 @@ public class VehicleService {
     public VehicleResponseDto update(User user, Long id, VehicleRequestDto vehicleRequestDto) {
         Vehicle oldVehicle = findById(user, id);
         vehicleMapper.vehicleRequestDtoToVehicle(vehicleRequestDto, oldVehicle);
-
         if (!oldVehicle.getBrand().getId().equals(vehicleRequestDto.getBrandId())) {
             Brand brand = brandService.findById(vehicleRequestDto.getBrandId());
             oldVehicle.setBrand(brand);
         }
-
         if (!oldVehicle.getEnterprise().getId().equals(vehicleRequestDto.getEnterpriseId())) {
             Enterprise enterprise = enterpriseService.findById(user, vehicleRequestDto.getEnterpriseId());
             oldVehicle.setEnterprise(enterprise);
         }
-
         if (!oldVehicle.getDrivers().stream()
                 .map(Driver::getId)
                 .collect(Collectors.toSet()).equals(vehicleRequestDto.getDriverIds())) {
@@ -174,14 +159,12 @@ public class VehicleService {
             oldVehicle.getDrivers().clear();
             oldVehicle.getDrivers().addAll(updatedDriverList);
         }
-
         // TODO: перенести эту проверку на этап валидации входных данных
         if (vehicleRequestDto.getActiveDriverId() != null &&
                 !vehicleRequestDto.getDriverIds().contains(vehicleRequestDto.getActiveDriverId())) {
             throw new ResponseStatusException(BAD_REQUEST,
                     "Активный водитель должен быть из списка назначенных водителей");
         }
-
         // TODO: проверить, что будет если назначить водителя, который активен на другой машине
         if (!oldVehicle.getActiveDriver().getId().equals(vehicleRequestDto.getActiveDriverId())) {
             Driver activeDriver = oldVehicle.getDrivers().stream()
@@ -190,13 +173,11 @@ public class VehicleService {
                     .orElse(null);
             oldVehicle.setActiveDriver(activeDriver);
         }
-
         return vehicleMapper.vehicleToVehicleResponseDto(vehicleRepository.save(oldVehicle));
     }
 
     public void delete(User user, Long id) {
         Vehicle vehicleToDelete = findById(user, id);
-
         vehicleToDelete.getBrand().getVehicles().remove(vehicleToDelete);
         vehicleToDelete.getEnterprise().getVehicles().remove(vehicleToDelete);
         vehicleToDelete.getDrivers().forEach(driver -> driver.getVehicles().remove(vehicleToDelete));

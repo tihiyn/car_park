@@ -14,6 +14,8 @@ public class DriverDto {
     private String driverLicense;
     private BigDecimal salary;
     private String phoneNumber;
-    private List<Long> vehicleIds;
+
     private Long activeVehicleId;
+
+    private List<Long> vehicleIds;
 }

@@ -43,22 +43,8 @@ public class EnterpriseService {
         Enterprise enterprise = enterpriseRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         String.format("Предприятие с id=%d отсутствует", id)));
-
         return managerService.getManagerByUser(user).getManagedEnterprises().stream()
                 .filter(e -> e.getId().equals(enterprise.getId()))
-                .findAny()
-                .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
-                        String.format("Вы не управляете предприятием с id=%d", id)));
-    }
-
-    public EnterpriseResponseDto findByIdForRest(User user, Long id) {
-        Enterprise enterprise = enterpriseRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        String.format("Предприятие с id=%d отсутствует", id)));
-
-        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
-                .filter(e -> e.getId().equals(enterprise.getId()))
-                .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
                 .findAny()
                 .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
                         String.format("Вы не управляете предприятием с id=%d", id)));
@@ -69,10 +55,23 @@ public class EnterpriseService {
                 .findAllByManagersContaining(managerService.getManagerByUser(user), pageable).getContent();
     }
 
+    public EnterpriseResponseDto findByIdForRest(User user, Long id) {
+        Enterprise enterprise = enterpriseRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        String.format("Предприятие с id=%d отсутствует", id)));
+        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
+                .filter(e -> e.getId().equals(enterprise.getId()))
+                .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
+                .findAny()
+                .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
+                        String.format("Вы не управляете предприятием с id=%d", id)));
+    }
+
     public List<EnterpriseResponseDto> findAllForRest(User user, Pageable pageable) {
         return enterpriseRepository.findAllByManagersContaining(managerService.getManagerByUser(user), pageable).stream()
                 .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
                 .toList();
+        // TODO удалить устаревший вариант
 //        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
 //                .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)
 //                .toList();
@@ -82,19 +81,16 @@ public class EnterpriseService {
         List<Vehicle> vehicles = vehicleService.findAllByIds(user, enterpriseRequestDto.getVehicleIds());
         List<Driver> drivers = driverService.findAllByIds(user, enterpriseRequestDto.getDriverIds());
         List<Manager> managers = new ArrayList<>(List.of(managerService.getManagerByUser(user)));
-
         Enterprise enterprise = enterpriseMapper.enterpriseRequestDtoToEnterprise(enterpriseRequestDto, vehicles, drivers, managers);
         vehicles.forEach(vehicle -> vehicle.setEnterprise(enterprise));
         drivers.forEach(driver -> driver.setEnterprise(enterprise));
         managers.forEach(manager -> manager.getManagedEnterprises().add(enterprise));
-
         return enterpriseRepository.save(enterprise);
     }
 
     public EnterpriseResponseDto update(User user, Long id, EnterpriseRequestDto enterpriseRequestDto) {
         Enterprise oldEnterprise = findById(user, id);
         enterpriseMapper.enterpriseRequestDtoToEnterprise(enterpriseRequestDto, oldEnterprise);
-
         if (!oldEnterprise.getVehicles().stream()
                 .map(Vehicle::getId)
                 .collect(Collectors.toSet()).equals(enterpriseRequestDto.getVehicleIds())) {
@@ -102,7 +98,6 @@ public class EnterpriseService {
             oldEnterprise.getVehicles().clear();
             oldEnterprise.getVehicles().addAll(vehicles);
         }
-
         if (!oldEnterprise.getDrivers().stream()
                 .map(Driver::getId)
                 .collect(Collectors.toSet()).equals(enterpriseRequestDto.getDriverIds())) {
@@ -110,13 +105,11 @@ public class EnterpriseService {
             oldEnterprise.getDrivers().clear();
             oldEnterprise.getDrivers().addAll(drivers);
         }
-
         return enterpriseMapper.enterpriseToEnterpriseResponseDto(enterpriseRepository.save(oldEnterprise));
     }
 
     public void delete(User user, Long id) {
         Enterprise enterpriseToDelete = findById(user, id);
-
         managerService.getManagerByUser(user).getManagedEnterprises().remove(enterpriseToDelete);
         enterpriseRepository.delete(enterpriseToDelete);
     }

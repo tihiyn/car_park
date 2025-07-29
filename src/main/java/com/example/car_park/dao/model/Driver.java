@@ -39,8 +39,9 @@ public class Driver {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enterprise_id", nullable = false)
     private Enterprise enterprise;
-    @ManyToMany(mappedBy = "drivers")
-    private List<Vehicle> vehicles = new ArrayList<>();
     @OneToOne(mappedBy = "activeDriver")
     private Vehicle activeVehicle;
+
+    @ManyToMany(mappedBy = "drivers")
+    private List<Vehicle> vehicles = new ArrayList<>();
 }

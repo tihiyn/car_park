@@ -10,6 +10,7 @@ public class ManagerDto {
     private String surname;
     private String name;
     private BigDecimal salary;
+
     private List<Long> enterpriseIds;
     private List<Long> vehicleIds;
     private List<Long> driverIds;

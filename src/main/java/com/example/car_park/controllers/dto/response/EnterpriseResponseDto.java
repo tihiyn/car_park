@@ -11,6 +11,7 @@ public class EnterpriseResponseDto {
     private String name;
     private String city;
     private String registrationNumber;
+
     private List<Long> driverIds;
     private List<Long> vehicleIds;
 }

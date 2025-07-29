@@ -44,7 +44,6 @@ public class VehicleController {
         if (vehicle == null) {
             return "redirect:/vehicles";
         }
-
         model.addAttribute("vehicle", vehicle);
         model.addAttribute("brands", brandService.findAll());
         return "edit_vehicle";

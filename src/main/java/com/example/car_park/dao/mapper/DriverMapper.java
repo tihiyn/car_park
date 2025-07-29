@@ -12,7 +12,6 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface DriverMapper {
-
     @Mappings({
             @Mapping(target = "vehicleIds", source = "driver.vehicles"),
             @Mapping(target = "activeVehicleId", source = "driver.activeVehicle")
@@ -29,7 +28,6 @@ public interface DriverMapper {
         if (vehicle == null) {
             return -1L;
         }
-
         return vehicle.getId();
     }
 }

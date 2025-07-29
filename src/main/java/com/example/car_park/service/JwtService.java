@@ -18,13 +18,12 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
+    // TODO создать локальный конфиг
     @Value(value = "${security.jwt.secret-key}")
     private String secretKey;
-
     @Value(value = "${security.jwt.expiration-time}")
     @Getter
     private long expirationTime;
-
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -84,7 +83,6 @@ public class JwtService {
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge((int) expirationTime);
-
         return cookie;
     }
 }

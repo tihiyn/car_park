@@ -32,6 +32,7 @@ public class Enterprise {
     private String city;
     @Column(unique = true)
     private String registrationNumber;
+
     @OneToMany(mappedBy = "enterprise",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     private List<Vehicle> vehicles;
