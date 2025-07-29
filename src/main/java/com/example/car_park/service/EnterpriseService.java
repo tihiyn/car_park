@@ -64,6 +64,11 @@ public class EnterpriseService {
                         String.format("Вы не управляете предприятием с id=%d", id)));
     }
 
+    public List<Enterprise> findAll(User user, Pageable pageable) {
+        return enterpriseRepository
+                .findAllByManagersContaining(managerService.getManagerByUser(user), pageable).getContent();
+    }
+
     public List<EnterpriseResponseDto> findAllForRest(User user, Pageable pageable) {
         return enterpriseRepository.findAllByManagersContaining(managerService.getManagerByUser(user), pageable).stream()
                 .map(enterpriseMapper::enterpriseToEnterpriseResponseDto)

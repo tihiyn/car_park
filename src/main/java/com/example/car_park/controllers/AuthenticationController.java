@@ -33,6 +33,6 @@ public class AuthenticationController {
         String jwt = jwtService.generateToken(authenticatedUser);
         response.addCookie(jwtService.addJwtToCookie(jwt));
 
-        return "redirect:/api/enterprises";
+        return "redirect:/api/ui/enterprises";
     }
 }

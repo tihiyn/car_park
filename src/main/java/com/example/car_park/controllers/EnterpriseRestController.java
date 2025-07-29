@@ -34,7 +34,7 @@ public class EnterpriseRestController {
     @GetMapping({"", "/{id}"})
     public ResponseEntity<?> getEnterprises(@AuthenticationPrincipal User user,
                                             @PathVariable(required = false) Long id,
-                                            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)Pageable pageable) {
+                                            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
         if (id == null) {
             return ResponseEntity.ok(enterpriseService.findAllForRest(user, pageable));
         }
