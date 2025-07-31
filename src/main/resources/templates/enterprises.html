@@ -2,11 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="data:,">
     <title>Список предприятий</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
           rel="stylesheet"
           integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
           crossorigin="anonymous">
+    <style>
+        .vehicle-badge {
+            padding-right: 1.5rem; /* Увеличиваем отступ справа для крестика */
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .btn-close {
+            position: absolute;
+            top: 50%;
+            right: 0.25rem;
+            transform: translateY(-50%);
+        }
+        .badge span {
+            display: inline-block;
+            line-height: 1;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
@@ -33,13 +53,39 @@
                 <span th:each="driver : ${enterprise.drivers}" th:text="${driver.lastName + ' ' + driver.firstName}" class="badge bg-primary me-1"></span>
             </td>
             <td>
-                <span th:each="vehicle : ${enterprise.vehicles}" th:text="${vehicle.regNum}" class="badge bg-success me-1"></span>
+                <span th:each="vehicle : ${enterprise.vehicles}" class="badge bg-success me-1 vehicle-badge">
+                    <a th:href="@{/vehicles/edit/{id}(id=${vehicle.id})}"
+                       class="text-white text-decoration-none"
+                       style="cursor: pointer;">
+                        <span th:text="${vehicle.regNum}"></span>
+                    </a>
+                    <button type="button" class="btn-close btn-close-white"
+                            th:onclick="'deleteVehicle(' + ${vehicle.id} + ')'"
+                            aria-label="Close"></button>
+                </span>
+                <a th:href="@{/vehicles/new(enterpriseId=${enterprise.id})}"
+                   class="badge bg-secondary text-white text-decoration-none"
+                   style="cursor: pointer;">
+                    <span>+</span>
+                </a>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function deleteVehicle(id) {
+        fetch(`/api/vehicles/${id}`, {
+            method: 'DELETE'
+        }).then(response => {
+            if (response.ok) {
+                location.reload(); // Обновить страницу после успешного удаления
+            } else {
+                alert("Ошибка при удалении транспортного средства.");
+            }
+        });
+    }
+</script>
 </body>
 </html>

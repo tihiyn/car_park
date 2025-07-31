@@ -1,87 +1,118 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Add New Vehicle</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            text-align: center;
-        }
-
-        form {
-            display: inline-block;
-            text-align: left;
-            padding: 20px;
-            border: 1px solid #aaa;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 6px;
-            margin-top: 5px;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 15px;
-            padding: 8px 16px;
-        }
-
-    </style>
+    <title>Добавить транспортное средство</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+          crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
 </head>
 <body>
+<div class="container mt-5">
+    <h1 class="mb-4">Добавить транспортное средство</h1>
 
-<h2>Новое транспортное средство</h2>
+    <form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post" class="row g-3">
+        <div class="col-md-6">
+            <label for="regNum" class="form-label">Регистрационный номер</label>
+            <input type="text" th:field="*{regNum}" class="form-control" id="regNum" required>
+        </div>
+        <div class="col-md-6">
+            <label for="price" class="form-label">Стоимость, ₽</label>
+            <input type="number" th:field="*{price}" class="form-control" id="price" min="100000" max="50000000" step="1000" required>
+        </div>
+        <div class="col-md-6">
+            <label for="mileage" class="form-label">Пробег, км</label>
+            <input type="number" th:field="*{mileage}" class="form-control" id="mileage" min="0" step="1000" required>
+        </div>
+        <div class="col-md-6">
+            <label for="productionYear" class="form-label">Год производства</label>
+            <input type="number" th:field="*{productionYear}" class="form-control" id="productionYear" min="1900" max="2025" required>
+        </div>
+        <div class="col-md-6">
+            <label for="color" class="form-label">Цвет</label>
+            <input type="text" th:field="*{color}" class="form-control" id="color" required>
+        </div>
+        <div class="col-md-6">
+            <label for="available" class="form-label">Доступность</label>
+            <select th:field="*{available}" class="form-select" id="available">
+                <option value="true">Да</option>
+                <option value="false">Нет</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="brand" class="form-label">Бренд</label>
+            <select th:field="*{brand}" class="form-select" id="brand" required>
+                <option value="">Выберите бренд</option>
+                <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"></option>
+            </select>
+        </div>
+        <input type="hidden" th:value="${enterprise.id}" name="enterprise" />
+        <div class="col-md-6">
+            <label for="drivers" class="form-label">Список водителей</label>
+            <select th:field="*{drivers}" class="selectpicker form-control" id="drivers" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="Не выбрано" data-select-all-text="Выбрать всё" data-deselect-all-text="Снять всё">
+                <option th:each="driver : ${drivers}" th:value="${driver.id}" th:text="${driver.lastName + ' ' + driver.firstName}"></option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label for="activeDriver" class="form-label">Активный водитель</label>
+            <select th:field="*{activeDriver}" class="form-select" id="activeDriver" disabled>
+                <option value="">Выберите водителя</option>
+                <option th:each="driver : ${activeDriverPretendents}" th:value="${driver.id}" th:text="${driver.lastName + ' ' + driver.firstName}"></option>
+            </select>
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</div>
 
-<form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Инициализация bootstrap-select
+        $('.selectpicker').selectpicker();
 
-    <label>Бренд
-        <select th:field="*{brand}" required>
-            <option value="" disabled selected>Выберите бренд</option>
-            <option th:each="brand: ${brands}"
-                    th:value="${brand.id}"
-                    th:text="${brand.name}">
-            </option>
-        </select>
-    </label>
+        const activeDriverSelect = $('#activeDriver');
+        const allPretendents = new Set();
 
-    <label>Номер:
-        <input type="text" th:field="*{regNum}" required>
-    </label>
+        // Сохраняем список всех возможных активных водителей
+        activeDriverSelect.find('option').each(function() {
+            if ($(this).val()) {  // Пропускаем пустое значение
+                allPretendents.add($(this).val());
+            }
+        });
 
-    <label>Стоимость, ₽:
-        <input type="number" th:field="*{price}" min="0" required>
-    </label>
+        // Обработчик изменения списка выбранных водителей
+        $('#drivers').on('changed.bs.select', function() {
+            const selectedDrivers = $(this).val() || [];
 
-    <label>Пробег, км:
-        <input type="number" step="1000" th:field="*{mileage}" min="0" required>
-    </label>
+            // Очищаем текущий выбор активного водителя
+            activeDriverSelect.val('');
 
-    <label>Год производства:
-        <input type="number" th:field="*{productionYear}" min="1900" max="2025" required>
-    </label>
+            // Если водители не выбраны, блокируем выбор активного водителя
+            if (selectedDrivers.length === 0) {
+                activeDriverSelect.prop('disabled', true);
+                return;
+            }
 
-    <label>Цвет:
-        <input type="text" th:field="*{color}" required>
-    </label>
+            // Разблокируем выбор активного водителя
+            activeDriverSelect.prop('disabled', false);
 
-    <label>Доступность:
-        <select th:field="*{available}">
-            <option value="true">Да</option>
-            <option value="false">Нет</option>
-        </select>
-    </label>
+            // Скрываем все опции кроме первой (placeholder)
+            activeDriverSelect.find('option:not(:first)').hide();
 
-    <button type="submit">Сохранить</button>
-</form>
-
+            // Показываем только опции для выбранных водителей, которые есть в списке претендентов
+            selectedDrivers.forEach(driverId => {
+                if (allPretendents.has(driverId)) {
+                    activeDriverSelect.find(`option[value="${driverId}"]`).show();
+                }
+            });
+        });
+    });
+</script>
 </body>
 </html>
