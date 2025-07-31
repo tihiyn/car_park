@@ -4,6 +4,7 @@ import com.example.car_park.controllers.dto.response.DriverDto;
 import com.example.car_park.dao.DriverRepository;
 import com.example.car_park.dao.mapper.DriverMapper;
 import com.example.car_park.dao.model.Driver;
+import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -66,5 +67,28 @@ public class DriverService {
 //        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
 //                .flatMap(enterprise -> enterprise.getDrivers().stream().map(driverMapper::driverToDriverDto))
 //                .toList();
+    }
+
+    // TODO добавить нормальную обработку ошибок
+    public List<Driver> findAll(User user, Long enterpriseId) {
+        Enterprise enterprise = managerService.getManagerByUser(user)
+                .getManagedEnterprises().stream()
+                .filter(e -> e.getId().equals(enterpriseId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
+                        String.format("Предприятие с id=%d отсутствует", enterpriseId)));
+        return enterprise.getDrivers();
+    }
+
+    public List<Driver> findActiveDriverPretendents(User user, Long enterpriseId) {
+        Enterprise enterprise = managerService.getManagerByUser(user)
+                .getManagedEnterprises().stream()
+                .filter(e -> e.getId().equals(enterpriseId))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
+                        String.format("Предприятие с id=%d отсутствует", enterpriseId)));
+        return enterprise.getDrivers().stream()
+                .filter(driver -> driver.getActiveVehicle() == null)
+                .toList();
     }
 }

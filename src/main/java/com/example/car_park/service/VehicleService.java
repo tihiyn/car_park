@@ -53,7 +53,7 @@ public class VehicleService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     String.format("Транспортное средство с id=%d отсутствует", id));
         }
-        return user.getManager().getManagedEnterprises().stream()
+        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getVehicles().stream())
                 .filter(v -> v.getId().equals(id))
                 .findAny()
