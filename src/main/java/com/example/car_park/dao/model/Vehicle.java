@@ -14,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class Vehicle {
     private Integer productionYear;
     private String color;
     private boolean isAvailable;
+    private ZonedDateTime purchaseDatetime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_id", referencedColumnName = "id", nullable = false)

@@ -2,6 +2,7 @@ package com.example.car_park.controllers.dto.response;
 
 import lombok.Data;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Data
@@ -13,6 +14,7 @@ public class VehicleResponseDto {
     private Integer productionYear;
     private String color;
     private boolean isAvailable;
+    private ZonedDateTime purchaseDatetime;
 
     private Long brandId;
     private Long enterpriseId;

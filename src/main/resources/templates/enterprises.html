@@ -8,6 +8,7 @@
           rel="stylesheet"
           integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
           crossorigin="anonymous">
+<!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/css/select2.min.css" rel="stylesheet" />-->
     <style>
         .vehicle-badge {
             padding-right: 1.5rem; /* Увеличиваем отступ справа для крестика */
@@ -26,6 +27,9 @@
             display: inline-block;
             line-height: 1;
         }
+        th:nth-child(5), td:nth-child(5) {
+            width: 15%; /* Увеличиваем ширину столбца "Часовой пояс" */
+        }
     </style>
 </head>
 <body>
@@ -39,6 +43,7 @@
             <th>Название</th>
             <th>Город</th>
             <th>Рег. номер</th>
+            <th>Часовой пояс</th>
             <th>Водители</th>
             <th>Транспорт</th>
         </tr>
@@ -49,6 +54,18 @@
             <td th:text="${enterprise.name}">Название</td>
             <td th:text="${enterprise.city}">Город</td>
             <td th:text="${enterprise.registrationNumber}">Рег. номер</td>
+            <td>
+                <form th:action="@{/api/ui/enterprises/update-timezone}" method="post" class="timezone-form">
+                    <input type="hidden" th:name="enterpriseId" th:value="${enterprise.id}" />
+                    <select th:name="timeZone" class="form-select timezone-select" onchange="this.form.submit()">
+                        <option th:each="zone : ${timeZones}"
+                                th:value="${zone}"
+                                th:text="${zone}"
+                                th:selected="${zone == enterprise.timeZone.id}">
+                        </option>
+                    </select>
+                </form>
+            </td>
             <td>
                 <span th:each="driver : ${enterprise.drivers}" th:text="${driver.lastName + ' ' + driver.firstName}" class="badge bg-primary me-1"></span>
             </td>
@@ -87,5 +104,21 @@
         });
     }
 </script>
+<!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/js/select2.min.js"></script>-->
+<!--<script>-->
+<!--    $(document).ready(function () {-->
+<!--        // Инициализация Select2-->
+<!--        $('.timezone-select').select2({-->
+<!--            width: '100%',-->
+<!--            placeholder: 'Выберите часовой пояс'-->
+<!--        });-->
+
+<!--        // Отправка формы при изменении значения-->
+<!--        $('.timezone-select').on('change', function () {-->
+<!--            $(this).closest('.timezone-form').submit();-->
+<!--        });-->
+<!--    });-->
+<!--</script>-->
 </body>
 </html>
