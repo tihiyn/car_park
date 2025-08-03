@@ -58,7 +58,7 @@ public class EnterpriseRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEnterprise(@AuthenticationPrincipal User user,
-                                 @PathVariable Long id) {
+                                              @PathVariable Long id) {
         enterpriseService.delete(user, id);
         return ResponseEntity.noContent().build();
     }
