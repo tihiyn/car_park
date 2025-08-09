@@ -97,7 +97,7 @@ public class VehicleService {
         Vehicle vehicle = vehicleRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         String.format("Транспортное средство с id=%d отсутствует", id)));
-        return vehicleMapper.vehicleToVehicleResponseDto(user.getManager().getManagedEnterprises().stream()
+        return vehicleMapper.vehicleToVehicleResponseDto(managerService.getManagerByUser(user).getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getVehicles().stream())
                 .filter(v -> v.getId().equals(vehicle.getId()))
                 .findAny()

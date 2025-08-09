@@ -11,6 +11,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +22,8 @@ public interface VehicleMapper {
             @Mapping(target = "brandId", source = "vehicle.brand.id"),
             @Mapping(target = "enterpriseId", source = "vehicle.enterprise.id"),
             @Mapping(target = "driverIds", source = "vehicle.drivers"),
-            @Mapping(target = "activeDriverId", source = "vehicle.activeDriver.id")
+            @Mapping(target = "activeDriverId", source = "vehicle.activeDriver.id"),
+            @Mapping(target = "purchaseDatetime", expression = "java(convertToEnterpriseTimezone(vehicle))")
     })
     VehicleResponseDto vehicleToVehicleResponseDto(Vehicle vehicle);
 
@@ -28,6 +31,14 @@ public interface VehicleMapper {
         return drivers.stream()
                 .map(Driver::getId)
                 .collect(Collectors.toList());
+    }
+
+    default ZonedDateTime convertToEnterpriseTimezone(Vehicle vehicle) {
+        if (vehicle.getPurchaseDatetime() == null) {
+            return null;
+        }
+        return vehicle.getPurchaseDatetime()
+                .withZoneSameInstant(vehicle.getEnterprise().getTimeZone());
     }
 
     @Mappings({

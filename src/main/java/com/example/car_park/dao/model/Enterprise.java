@@ -1,5 +1,7 @@
 package com.example.car_park.dao.model;
 
+import com.example.car_park.dao.model.converter.ZoneIdConverter;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
@@ -14,6 +16,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -32,6 +35,8 @@ public class Enterprise {
     private String city;
     @Column(unique = true)
     private String registrationNumber;
+    @Convert(converter = ZoneIdConverter.class)
+    private ZoneId timeZone;
 
     @OneToMany(mappedBy = "enterprise",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})

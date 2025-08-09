@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -112,5 +113,13 @@ public class EnterpriseService {
         Enterprise enterpriseToDelete = findById(user, id);
         managerService.getManagerByUser(user).getManagedEnterprises().remove(enterpriseToDelete);
         enterpriseRepository.delete(enterpriseToDelete);
+    }
+
+    public void updateTimeZone(Long enterpriseId, String timeZone) {
+        Enterprise enterprise = enterpriseRepository.findById(enterpriseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        String.format("Предприятие с id=%d отсутствует", enterpriseId)));
+        enterprise.setTimeZone(ZoneId.of(timeZone));
+        enterpriseRepository.save(enterprise);
     }
 }

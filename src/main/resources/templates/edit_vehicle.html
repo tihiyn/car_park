@@ -14,7 +14,7 @@
 <body>
 <div class="container mt-5">
     <h1 class="mb-4">Редактировать транспортное средство</h1>
-    <form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post" class="row g-3">
+    <form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post" id='vehicleForm' class="row g-3">
         <input type="hidden" th:value="${vehicle.id}" name="id" />
         <div class="col-md-6">
             <label for="regNum" class="form-label">Регистрационный номер</label>
@@ -42,6 +42,13 @@
                 <option value="true">Да</option>
                 <option value="false">Нет</option>
             </select>
+        </div>
+        <div class="col-md-6">
+            <label for="datetimeInput" class="form-label">Дата и время покупки</label>
+            <input type="datetime-local"
+                   th:data-utc="${vehicle.purchaseDatetime}"
+                   class="form-control" id="datetimeInput" required>
+            <input type="hidden" name="purchaseDatetime" id="purchaseDatetime" />
         </div>
         <div class="col-md-6">
             <label for="brand" class="form-label">Бренд</label>
@@ -133,6 +140,44 @@
 
         // Обновляем список активных водителей при загрузке страницы
         updateActiveDriverOptions();
+    });
+</script>
+<script>
+    window.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById("datetimeInput");
+        const utcString = input.dataset.utc;
+
+        if (utcString) {
+            // Преобразуем UTC строку в Date объект
+            const utcDate = new Date(utcString);
+
+            // Получаем локальное ISO без секунды и миллисекунд
+            const localISO = utcDate.toISOString().slice(0, 16);
+
+            // Преобразуем UTC в локальное
+            const offset = utcDate.getTimezoneOffset();
+            const localDate = new Date(utcDate.getTime() - offset * 60 * 1000);
+            const localValue = localDate.toISOString().slice(0, 16);
+
+            input.value = localValue;
+        }
+    });
+</script>
+<script>
+    document.getElementById("vehicleForm").addEventListener("submit", function (event) {
+        const localInput = document.getElementById("datetimeInput");
+        const hiddenInput = document.getElementById("purchaseDatetime");
+
+        const localValue = localInput.value; // Пример: "2025-08-04T18:30"
+        if (!localValue) return;
+
+        // Создаём Date из локального значения
+        const localDate = new Date(localValue);
+
+        // Получаем ISO строку в UTC (с "Z" в конце)
+        const utcISOString = localDate.toISOString(); // Пример: "2025-08-04T15:30:00.000Z"
+
+        hiddenInput.value = utcISOString;
     });
 </script>
 </body>
