@@ -1,20 +1,26 @@
 package com.example.car_park.service;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
+import com.example.car_park.controllers.dto.response.VehicleLocationDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
+import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.VehicleRepository;
+import com.example.car_park.dao.mapper.VehicleLocationMapper;
 import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Brand;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
+import com.example.car_park.dao.model.VehicleLocation;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,17 +32,23 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public class VehicleService {
     private final VehicleRepository vehicleRepository;
+    private final VehicleLocationRepository vehicleLocationRepository;
     private final VehicleMapper vehicleMapper;
+    private final VehicleLocationMapper vehicleLocationMapper;
     private final ManagerService managerService;
     private final BrandService brandService;
     private final EnterpriseService enterpriseService;
     private final DriverService driverService;
 
-    public VehicleService(VehicleRepository vehicleRepository, VehicleMapper vehicleMapper,
-                          ManagerService managerService, BrandService brandService,
-                          @Lazy EnterpriseService enterpriseService, DriverService driverService) {
+
+    public VehicleService(VehicleRepository vehicleRepository, VehicleLocationRepository vehicleLocationRepository,
+                          VehicleMapper vehicleMapper, VehicleLocationMapper vehicleLocationMapper,
+                          ManagerService managerService, BrandService brandService, @Lazy EnterpriseService enterpriseService,
+                          DriverService driverService) {
         this.vehicleRepository = vehicleRepository;
+        this.vehicleLocationRepository = vehicleLocationRepository;
         this.vehicleMapper = vehicleMapper;
+        this.vehicleLocationMapper = vehicleLocationMapper;
         this.managerService = managerService;
         this.brandService = brandService;
         this.enterpriseService = enterpriseService;
@@ -106,9 +118,6 @@ public class VehicleService {
     }
 
     public List<VehicleResponseDto> findAllForRest(User user, Pageable pageable) {
-        System.out.println("Pageable received: page = " + pageable.getPageNumber() +
-                ", size = " + pageable.getPageSize() +
-                ", sort = " + pageable.getSort());
         List<VehicleResponseDto> list = vehicleRepository.findAllByEnterpriseIn(managerService.getManagerByUser(user).getManagedEnterprises(), pageable).getContent()
                 .stream()
                 .map(vehicleMapper::vehicleToVehicleResponseDto)
@@ -194,5 +203,18 @@ public class VehicleService {
 
     public List<Vehicle> findByKeyword(String keyword) {
         return vehicleRepository.findByKeyword(keyword);
+    }
+
+    public List<VehicleLocationDto> getTrack(User user, Long id, ZonedDateTime begin, ZonedDateTime end, String format) {
+        Vehicle vehicle = findById(id);
+        ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
+        List<VehicleLocation> locations = vehicleLocationRepository.findVehicleLocationsByVehicleAndTimestampBetween(
+                vehicle,
+                begin.withZoneSameInstant(ZoneId.of("UTC")),
+                end.withZoneSameInstant(ZoneId.of("UTC"))
+        );
+        return locations.stream()
+                .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationDto(location, timeZone, format))
+                .toList();
     }
 }
