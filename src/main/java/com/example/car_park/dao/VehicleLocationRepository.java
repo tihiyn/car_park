@@ -9,5 +9,6 @@ import java.util.List;
 
 public interface VehicleLocationRepository extends JpaRepository<VehicleLocation, Long> {
 
-    List<VehicleLocation> findVehicleLocationsByVehicleAndTimestampBetween(Vehicle vehicle, ZonedDateTime utc, ZonedDateTime utc1);
+    List<VehicleLocation> findVehicleLocationsByVehicleAndTimestampBetween(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end);
+    List<VehicleLocation> findAllByVehicleAndTimestampBetween(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end);
 }
