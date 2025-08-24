@@ -1,8 +1,8 @@
 package com.example.car_park.service;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
-import com.example.car_park.controllers.dto.response.VehicleLocationDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
+import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.VehicleRepository;
 import com.example.car_park.dao.mapper.VehicleLocationMapper;
@@ -10,17 +10,22 @@ import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Brand;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.Enterprise;
+import com.example.car_park.dao.model.Trip;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
+import com.example.car_park.enums.Format;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,12 +44,13 @@ public class VehicleService {
     private final BrandService brandService;
     private final EnterpriseService enterpriseService;
     private final DriverService driverService;
+    private final TripRepository tripRepository;
 
 
     public VehicleService(VehicleRepository vehicleRepository, VehicleLocationRepository vehicleLocationRepository,
                           VehicleMapper vehicleMapper, VehicleLocationMapper vehicleLocationMapper,
                           ManagerService managerService, BrandService brandService, @Lazy EnterpriseService enterpriseService,
-                          DriverService driverService) {
+                          DriverService driverService, TripRepository tripRepository) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleLocationRepository = vehicleLocationRepository;
         this.vehicleMapper = vehicleMapper;
@@ -53,6 +59,7 @@ public class VehicleService {
         this.brandService = brandService;
         this.enterpriseService = enterpriseService;
         this.driverService = driverService;
+        this.tripRepository = tripRepository;
     }
 
     public Vehicle findById(Long id) {
@@ -205,16 +212,60 @@ public class VehicleService {
         return vehicleRepository.findByKeyword(keyword);
     }
 
-    public List<VehicleLocationDto> getTrack(User user, Long id, ZonedDateTime begin, ZonedDateTime end, String format) {
-        Vehicle vehicle = findById(id);
+//    public List<VehicleLocationJsonDto> getTrack(User user, Long id, ZonedDateTime begin, ZonedDateTime end, String format) {
+//        // TODO замеенить на findById(user, id)
+//        Vehicle vehicle = findById(id);
+//        ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
+//        List<VehicleLocation> locations = vehicleLocationRepository.findVehicleLocationsByVehicleAndTimestampBetween(
+//                vehicle,
+//                begin.withZoneSameInstant(ZoneId.of("UTC")),
+//                end.withZoneSameInstant(ZoneId.of("UTC"))
+//        );
+//        return locations.stream()
+//                .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationJsonDto(location, timeZone, format))
+//                .toList();
+//    }
+
+    public ResponseEntity<?> getTripsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end, Format format) {
+        Vehicle vehicle = findById(user, id);
+        List<VehicleLocation> locations = getTrips(vehicle, begin, end);
         ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
-        List<VehicleLocation> locations = vehicleLocationRepository.findVehicleLocationsByVehicleAndTimestampBetween(
+        if (format == Format.JSON) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(locations.stream()
+                            .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationJsonDto(location, timeZone))
+                            .toList()
+                    );
+        }
+        return ResponseEntity.ok()
+                .body(vehicleLocationMapper.vehicleLocationsToGeoJsonMap(locations, timeZone));
+    }
+
+    public List<VehicleLocation> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
+        List<Trip> trips = tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
                 vehicle,
                 begin.withZoneSameInstant(ZoneId.of("UTC")),
-                end.withZoneSameInstant(ZoneId.of("UTC"))
-        );
-        return locations.stream()
-                .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationDto(location, timeZone, format))
+                end.withZoneSameInstant(ZoneId.of("UTC")));
+        if (trips.isEmpty()) {
+            return new ArrayList<>();
+        }
+        ZonedDateTime minBegin = trips.stream()
+                .map(Trip::getBegin)
+                .min(ZonedDateTime::compareTo)
+                .get();
+        ZonedDateTime maxEnd = trips.stream()
+                .map(Trip::getEnd)
+                .max(ZonedDateTime::compareTo)
+                .get();
+        List<VehicleLocation> allLocations = vehicleLocationRepository
+                .findAllByVehicleAndTimestampBetween(vehicle, minBegin, maxEnd);
+        return allLocations.stream()
+                .filter(location -> trips.stream()
+                        .anyMatch(trip ->
+                                !location.getTimestamp().isBefore(trip.getBegin()) &&
+                                        !location.getTimestamp().isAfter(trip.getEnd())
+                        ))
                 .toList();
     }
 }

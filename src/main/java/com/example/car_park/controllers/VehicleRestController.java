@@ -1,18 +1,16 @@
 package com.example.car_park.controllers;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
-import com.example.car_park.controllers.dto.response.VehicleLocationDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
+import com.example.car_park.enums.Format;
 import com.example.car_park.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,10 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/vehicles")
@@ -72,49 +66,47 @@ public class VehicleRestController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/track")
-    public ResponseEntity<?> trackVehicle(@AuthenticationPrincipal User user,
-                                          @PathVariable Long id,
-                                          @RequestParam ZonedDateTime begin,
-                                          @RequestParam ZonedDateTime end,
-                                          @RequestParam(defaultValue = "json", required = false) String format) {
-        List<VehicleLocationDto> vehicleLocationDtoList = vehicleService.getTrack(user, id, begin, end, format);
-        if ("geoJson".equalsIgnoreCase(format)) {
-            List<Map<String, Object>> features = new ArrayList<>();
+//    @GetMapping("/{id}/track")
+//    public ResponseEntity<?> trackVehicle(@AuthenticationPrincipal User user,
+//                                          @PathVariable Long id,
+//                                          @RequestParam ZonedDateTime begin,
+//                                          @RequestParam ZonedDateTime end,
+//                                          @RequestParam(defaultValue = "json", required = false) String format) {
+//        List<VehicleLocationJsonDto> vehicleLocationDtoList = vehicleService.getTrack(user, id, begin, end, format);
+//        if ("geoJson".equalsIgnoreCase(format)) {
+//            List<Map<String, Object>> features = new ArrayList<>();
+//            for (VehicleLocationJsonDto loc : vehicleLocationDtoList) {
+//                Point p = loc.getGeometry();
+//                Map<String, Object> geometry = Map.of(
+//                        "type", "Point",
+//                        "coordinates", List.of(p.getX(), p.getY()) // X=долгота, Y=широта
+//                );
+//                Map<String, Object> properties = new LinkedHashMap<>();
+//                properties.put("name", loc.getTimestamp());
+//                properties.put("description", "Coordinates");
+//                Map<String, Object> feature = Map.of(
+//                        "type", "Feature",
+//                        "geometry", geometry,
+//                        "properties", properties
+//                );
+//                features.add(feature);
+//            }
+//            return ResponseEntity.ok(Map.of(
+//                    "type", "FeatureCollection",
+//                    "features", features
+//            ));
+//        }
+//        return ResponseEntity.ok()
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .body(vehicleLocationDtoList);
+//    }
 
-            for (VehicleLocationDto loc : vehicleLocationDtoList) {
-                Point p = loc.getGeometry();
-
-                Map<String, Object> geometry = Map.of(
-                        "type", "Point",
-                        "coordinates", List.of(p.getX(), p.getY()) // X=долгота, Y=широта
-                );
-
-                Map<String, Object> properties = new LinkedHashMap<>();
-                properties.put("name", loc.getTimestamp());
-                properties.put("description", "Coordinates");
-                // добавь другие поля DTO, которые нужны в properties
-                // properties.put("someField", loc.getSomeField());
-
-                Map<String, Object> feature = Map.of(
-                        "type", "Feature",
-                        "geometry", geometry,
-                        "properties", properties
-                );
-
-                features.add(feature);
-            }
-
-            return ResponseEntity.ok(Map.of(
-                    "type", "FeatureCollection",
-                    "features", features
-            ));
-//            return ResponseEntity.ok()
-//                    .contentType(MediaType.parseMediaType("application/geo+json"))
-//                    .body(vehicleLocationDtoList);
-        }
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(vehicleLocationDtoList);
+    @GetMapping("/{id}/trips")
+    public ResponseEntity<?> getTrips(@AuthenticationPrincipal User user,
+                                      @PathVariable Long id,
+                                      @RequestParam ZonedDateTime begin,
+                                      @RequestParam ZonedDateTime end,
+                                      @RequestParam(defaultValue = "json", required = false) String format) {
+        return vehicleService.getTripsForAPI(user, id, begin, end, Format.getByValue(format));
     }
 }
