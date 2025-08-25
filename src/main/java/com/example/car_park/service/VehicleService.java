@@ -1,10 +1,12 @@
 package com.example.car_park.service;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
+import com.example.car_park.controllers.dto.response.TripDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.VehicleRepository;
+import com.example.car_park.dao.mapper.TripMapper;
 import com.example.car_park.dao.mapper.VehicleLocationMapper;
 import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Brand;
@@ -45,12 +47,13 @@ public class VehicleService {
     private final EnterpriseService enterpriseService;
     private final DriverService driverService;
     private final TripRepository tripRepository;
+    private final TripMapper tripMapper;
 
 
     public VehicleService(VehicleRepository vehicleRepository, VehicleLocationRepository vehicleLocationRepository,
                           VehicleMapper vehicleMapper, VehicleLocationMapper vehicleLocationMapper,
                           ManagerService managerService, BrandService brandService, @Lazy EnterpriseService enterpriseService,
-                          DriverService driverService, TripRepository tripRepository) {
+                          DriverService driverService, TripRepository tripRepository, TripMapper tripMapper) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleLocationRepository = vehicleLocationRepository;
         this.vehicleMapper = vehicleMapper;
@@ -60,6 +63,7 @@ public class VehicleService {
         this.enterpriseService = enterpriseService;
         this.driverService = driverService;
         this.tripRepository = tripRepository;
+        this.tripMapper = tripMapper;
     }
 
     public Vehicle findById(Long id) {
@@ -226,9 +230,9 @@ public class VehicleService {
 //                .toList();
 //    }
 
-    public ResponseEntity<?> getTripsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end, Format format) {
+    public ResponseEntity<?> getTripsByPointsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end, Format format) {
         Vehicle vehicle = findById(user, id);
-        List<VehicleLocation> locations = getTrips(vehicle, begin, end);
+        List<VehicleLocation> locations = getTripsByPoints(vehicle, begin, end);
         ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
         if (format == Format.JSON) {
             return ResponseEntity.ok()
@@ -242,7 +246,7 @@ public class VehicleService {
                 .body(vehicleLocationMapper.vehicleLocationsToGeoJsonMap(locations, timeZone));
     }
 
-    public List<VehicleLocation> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
+    public List<VehicleLocation> getTripsByPoints(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
         List<Trip> trips = tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
                 vehicle,
                 begin.withZoneSameInstant(ZoneId.of("UTC")),
@@ -266,6 +270,18 @@ public class VehicleService {
                                 !location.getTimestamp().isBefore(trip.getBegin()) &&
                                         !location.getTimestamp().isAfter(trip.getEnd())
                         ))
+                .toList();
+    }
+
+    public List<TripDto> getTrips(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
+        Vehicle vehicle = findById(user, id);
+        ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
+        return tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
+                vehicle,
+                begin.withZoneSameInstant(ZoneId.of("UTC")),
+                end.withZoneSameInstant(ZoneId.of("UTC"))
+        ).stream()
+                .map(trip -> tripMapper.tripToTripDto(trip, timeZone))
                 .toList();
     }
 }

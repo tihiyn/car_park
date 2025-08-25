@@ -1,6 +1,7 @@
 package com.example.car_park.controllers;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
+import com.example.car_park.controllers.dto.response.TripDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
@@ -101,12 +103,20 @@ public class VehicleRestController {
 //                .body(vehicleLocationDtoList);
 //    }
 
-    @GetMapping("/{id}/trips")
-    public ResponseEntity<?> getTrips(@AuthenticationPrincipal User user,
+    @GetMapping("/{id}/trips_points")
+    public ResponseEntity<?> getTripsByPoints(@AuthenticationPrincipal User user,
                                       @PathVariable Long id,
                                       @RequestParam ZonedDateTime begin,
                                       @RequestParam ZonedDateTime end,
                                       @RequestParam(defaultValue = "json", required = false) String format) {
-        return vehicleService.getTripsForAPI(user, id, begin, end, Format.getByValue(format));
+        return vehicleService.getTripsByPointsForAPI(user, id, begin, end, Format.getByValue(format));
+    }
+
+    @GetMapping("/{id}/trips")
+    public ResponseEntity<List<TripDto>> getTrips(@AuthenticationPrincipal User user,
+                                                  @PathVariable Long id,
+                                                  @RequestParam ZonedDateTime begin,
+                                                  @RequestParam ZonedDateTime end) {
+        return ResponseEntity.ok(vehicleService.getTrips(user, id, begin, end));
     }
 }

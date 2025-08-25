@@ -5,8 +5,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import org.locationtech.jts.geom.Point;
 
 import java.time.ZonedDateTime;
 
@@ -22,4 +24,8 @@ public class Trip {
 
     @ManyToOne
     private Vehicle vehicle;
+    @OneToOne
+    private VehicleLocation beginLocation;
+    @OneToOne
+    private VehicleLocation endLocation;
 }
