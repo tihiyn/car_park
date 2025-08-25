@@ -8,7 +8,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
-import org.locationtech.jts.geom.Point;
 
 import java.time.ZonedDateTime;
 
@@ -22,6 +21,7 @@ public class Trip {
     private ZonedDateTime begin;
     private ZonedDateTime end;
 
+    // TODO: добавить параметры для аннотаций
     @ManyToOne
     private Vehicle vehicle;
     @OneToOne

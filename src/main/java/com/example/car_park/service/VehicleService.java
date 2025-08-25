@@ -273,6 +273,7 @@ public class VehicleService {
                 .toList();
     }
 
+    // TODO: вынести метод в отдельный сервис
     public List<TripDto> getTrips(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
         Vehicle vehicle = findById(user, id);
         ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
