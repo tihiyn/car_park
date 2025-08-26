@@ -6,6 +6,7 @@ import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.enums.Format;
+import com.example.car_park.service.TripService;
 import com.example.car_park.service.VehicleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehicleRestController {
     private final VehicleService vehicleService;
+    private final TripService tripService;
 
     @GetMapping({"", "/{id}"})
     public ResponseEntity<?> getVehicles(@AuthenticationPrincipal User user,
@@ -109,7 +111,7 @@ public class VehicleRestController {
                                       @RequestParam ZonedDateTime begin,
                                       @RequestParam ZonedDateTime end,
                                       @RequestParam(defaultValue = "json", required = false) String format) {
-        return vehicleService.getTripsByPointsForAPI(user, id, begin, end, Format.getByValue(format));
+        return tripService.getTripsByPointsForAPI(user, id, begin, end, Format.getByValue(format));
     }
 
     @GetMapping("/{id}/trips")
@@ -117,6 +119,6 @@ public class VehicleRestController {
                                                   @PathVariable Long id,
                                                   @RequestParam ZonedDateTime begin,
                                                   @RequestParam ZonedDateTime end) {
-        return ResponseEntity.ok(vehicleService.getTrips(user, id, begin, end));
+        return ResponseEntity.ok(tripService.getTrips(user, id, begin, end));
     }
 }

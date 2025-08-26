@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.time.ZonedDateTime;
 
-//TODO: сделать 2 внутренних класса для информации о начале и конце поездки
 @Data
 public class TripDto {
     private BeginInfo beginInfo;
