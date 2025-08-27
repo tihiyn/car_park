@@ -5,6 +5,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -20,6 +21,11 @@ public class Trip {
     private ZonedDateTime begin;
     private ZonedDateTime end;
 
+    // TODO: добавить параметры для аннотаций
     @ManyToOne
     private Vehicle vehicle;
+    @OneToOne
+    private VehicleLocation beginLocation;
+    @OneToOne
+    private VehicleLocation endLocation;
 }
