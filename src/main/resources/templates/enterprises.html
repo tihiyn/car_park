@@ -71,7 +71,7 @@
             </td>
             <td>
                 <span th:each="vehicle : ${enterprise.vehicles}" class="badge bg-success me-1 vehicle-badge">
-                    <a th:href="@{/vehicles/edit/{id}(id=${vehicle.id})}"
+                    <a th:href="@{/vehicles/{id}(id=${vehicle.id})}"
                        class="text-white text-decoration-none"
                        style="cursor: pointer;">
                         <span th:text="${vehicle.regNum}"></span>

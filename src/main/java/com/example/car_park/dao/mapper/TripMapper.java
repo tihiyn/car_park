@@ -1,6 +1,7 @@
 package com.example.car_park.dao.mapper;
 
 import com.example.car_park.controllers.dto.response.TripDto;
+import com.example.car_park.controllers.dto.response.TripsViewModel;
 import com.example.car_park.dao.model.Trip;
 import com.example.car_park.dao.model.VehicleLocation;
 import com.example.car_park.api.AddressClient;
@@ -31,6 +32,14 @@ public abstract class TripMapper {
             @Mapping(target = "endInfo.endTS", expression = "java(trip.getEnd().withZoneSameInstant(timeZone))")
     })
     public abstract TripDto tripToTripDto(Trip trip, @Context ZoneId timeZone);
+
+    @Mappings({
+            @Mapping(target = "beginAddress", expression = "java(getAddress(trip.getBeginLocation()))"),
+            @Mapping(target = "beginTS", expression = "java(trip.getBegin())"),
+            @Mapping(target = "endAddress", expression = "java(getAddress(trip.getEndLocation()))"),
+            @Mapping(target = "endTS", expression = "java(trip.getEnd())")
+    })
+    public abstract TripsViewModel tripToTripsViewModel(Trip trip);
 
     protected String getAddress(VehicleLocation location) {
         return addressClient.getAddressByCoords(

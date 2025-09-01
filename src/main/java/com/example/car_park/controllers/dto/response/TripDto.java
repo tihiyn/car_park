@@ -6,6 +6,7 @@ import java.time.ZonedDateTime;
 
 @Data
 public class TripDto {
+    private Long id;
     private BeginInfo beginInfo;
     private EndInfo endInfo;
 

@@ -1,6 +1,10 @@
 package com.example.car_park.service;
 
+import com.example.car_park.controllers.dto.response.GeoJsonFeature;
+import com.example.car_park.controllers.dto.response.GeoJsonFeatureCollection;
+import com.example.car_park.controllers.dto.response.GeoJsonGeometry;
 import com.example.car_park.controllers.dto.response.TripDto;
+import com.example.car_park.controllers.dto.response.TripsViewModel;
 import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.mapper.TripMapper;
@@ -18,7 +22,9 @@ import org.springframework.stereotype.Service;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -72,15 +78,69 @@ public class TripService {
                 .toList();
     }
 
-    public List<TripDto> getTrips(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
+    public List<TripsViewModel> getTripsForUI(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
+        Vehicle vehicle = vehicleService.findById(user, id);
+        return getTrips(vehicle, begin, end).stream()
+                .map(tripMapper::tripToTripsViewModel)
+                .toList();
+    }
+
+    public List<TripDto> getTripsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
         Vehicle vehicle = vehicleService.findById(user, id);
         ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
+        return getTrips(vehicle, begin, end).stream()
+                .map(trip -> tripMapper.tripToTripDto(trip, timeZone))
+                .toList();
+    }
+
+    private List<Trip> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
         return tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
                         vehicle,
                         begin.withZoneSameInstant(ZoneId.of("UTC")),
                         end.withZoneSameInstant(ZoneId.of("UTC"))
-                ).stream()
-                .map(trip -> tripMapper.tripToTripDto(trip, timeZone))
-                .toList();
+                );
     }
+
+    public ResponseEntity<?> getTripsForMap(List<Long> tripIds) {
+        Map<Long, List<VehicleLocation>> tripsMap = new HashMap<>();
+        for (Long tripId : tripIds) {
+            Trip trip = tripRepository.findById(tripId).orElse(null);
+            if (trip != null) {
+                List<VehicleLocation> locations = vehicleLocationRepository
+                        .findAllByVehicleAndTimestampBetween(
+                                trip.getVehicle(),
+                                trip.getBegin(),
+                                trip.getEnd());
+                tripsMap.put(tripId, locations);
+            }
+        }
+        List<GeoJsonFeatureCollection> geoJson = convertToGeoJson(tripsMap);
+        return ResponseEntity.ok(geoJson);
+    }
+
+    public List<GeoJsonFeatureCollection> convertToGeoJson(Map<Long, List<VehicleLocation>> tripsMap) {
+        List<GeoJsonFeatureCollection> result = new ArrayList<>();
+
+        for (Map.Entry<Long, List<VehicleLocation>> entry : tripsMap.entrySet()) {
+            Long tripId = entry.getKey();
+            List<VehicleLocation> locations = entry.getValue();
+
+            // Преобразуем VehicleLocation в массив координат
+            List<List<Double>> coordinates = locations.stream()
+                    .map(loc -> List.of(loc.getLocation().getX(), loc.getLocation().getY())) // X=lon, Y=lat
+                    .toList();
+
+            GeoJsonFeature feature = new GeoJsonFeature(
+                    "Feature",
+                    Map.of("tripId", tripId),
+                    new GeoJsonGeometry("LineString", coordinates)
+            );
+
+            GeoJsonFeatureCollection collection = new GeoJsonFeatureCollection("FeatureCollection", List.of(feature));
+            result.add(collection);
+        }
+
+        return result;
+    }
+
 }

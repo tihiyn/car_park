@@ -1,6 +1,7 @@
 package com.example.car_park.dao.mapper;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
+import com.example.car_park.controllers.dto.response.VehicleInfoViewModel;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.model.Brand;
 import com.example.car_park.dao.model.Driver;
@@ -58,4 +59,18 @@ public interface VehicleMapper {
     })
     Vehicle vehicleRequestDtoToVehicle(VehicleRequestDto vehicleRequestDto, Brand brand, Enterprise enterprise,
                                        List<Driver> drivers, Driver activeDriver);
+
+    @Mappings({
+            @Mapping(target = "isAvailable", expression = "java(vehicle.isAvailable() ? \"Да\" : \"Нет\")"),
+            @Mapping(target = "brand", source = "vehicle.brand.name"),
+            @Mapping(target = "activeDriver", expression = "java(String.format(\"%s %s\", vehicle.getActiveDriver().getLastName(), vehicle.getActiveDriver().getFirstName()))"),
+            @Mapping(target = "drivers", expression = "java(getDriversNames(vehicle.getDrivers()))")
+    })
+    VehicleInfoViewModel vehicleToVehicleInfoViewModel(Vehicle vehicle);
+
+    default String getDriversNames(List<Driver> drivers) {
+        return drivers.stream()
+                .map(driver -> String.format("%s %s", driver.getLastName(), driver.getFirstName()))
+                .collect(Collectors.joining(", "));
+    }
 }

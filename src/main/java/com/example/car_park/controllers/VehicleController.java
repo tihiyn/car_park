@@ -1,5 +1,6 @@
 package com.example.car_park.controllers;
 
+import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,14 +27,22 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehicleController {
     private final VehicleService vehicleService;
+    private final VehicleMapper vehicleMapper;
     private final BrandService brandService;
     private final DriverService driverService;
     private final EnterpriseService enterpriseService;
 
-    @GetMapping()
-    public String getVehicles(Model model) {
-        model.addAttribute("vehicles", vehicleService.findAll());
-        return "vehicles";
+    @GetMapping({"", "/{id}"})
+    public String getVehicles(@AuthenticationPrincipal User user,
+                              @PathVariable(required = false) Long id,
+                              Model model) {
+        if (id == null) {
+            model.addAttribute("vehicles", vehicleService.findAll());
+            return "vehicles";
+        }
+        Vehicle vehicle = vehicleService.findById(user, id);
+        model.addAttribute("vehicle", vehicleMapper.vehicleToVehicleInfoViewModel(vehicle));
+        return "vehicle_info";
     }
 
     @GetMapping("/new")
