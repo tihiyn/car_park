@@ -9,4 +9,5 @@ import java.util.List;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end);
+    List<Trip> findAllByBeginGreaterThanEqualAndEndLessThanEqual(ZonedDateTime begin, ZonedDateTime end);
 }
