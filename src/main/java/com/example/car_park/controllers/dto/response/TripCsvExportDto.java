@@ -5,7 +5,7 @@ import org.locationtech.jts.geom.Point;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-public record TripExportDto(
+public record TripCsvExportDto(
         Long enterpriseId,
         String name,
         String city,

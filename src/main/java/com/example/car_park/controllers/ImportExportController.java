@@ -1,17 +1,19 @@
 package com.example.car_park.controllers;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,33 +34,45 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api/data")
 @PreAuthorize("hasRole('MANAGER')")
-@RequiredArgsConstructor
 public class ImportExportController {
-    private final JobLauncher jobLauncher;
-    private final Job job;
+    @Autowired
+    private JobLauncher jobLauncher;
+    @Autowired
+    @Qualifier("csvExportJob")
+    private Job csvJob;
+    @Autowired
+    @Qualifier("jsonExportJob")
+    private Job jsonJob;
 
     private static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + "/batch-exports/";
 
-    public ResponseEntity<Resource> export(@RequestParam ZonedDateTime begin,
-                                           @RequestParam ZonedDateTime end) {
+    @PostMapping("/export")
+    public ResponseEntity<Resource> export(@RequestParam Long enterpriseId,
+                                           @RequestParam ZonedDateTime begin,
+                                           @RequestParam ZonedDateTime end,
+                                           @RequestParam(defaultValue = "json", required = false) String format) {
         try {
             // Создаем временную директорию
             Files.createDirectories(Paths.get(TEMP_DIR));
 
             // Генерируем уникальное имя файла
-            String fileName = String.format("trip_export_%d_%d.csv",
+            String fileName = String.format("trip_export_%d_%d.%s",
                     System.currentTimeMillis(),
-                    Thread.currentThread().getId());
+                    Thread.currentThread().getId(),
+                    format.equalsIgnoreCase("csv") ? "csv" : "json");
             String outputPath = TEMP_DIR + fileName;
 
             // Настраиваем параметры Job
             JobParametersBuilder builder = new JobParametersBuilder()
-                    .addJobParameter("begin", begin, ZonedDateTime.class)
-                    .addJobParameter("end", end, ZonedDateTime.class)
+                    .addLong("enterpriseId", enterpriseId)
+                    .addString("begin", begin.toString())
+                    .addString("end", end.toString())
                     .addString("path", outputPath);
 
             // Запускаем Job синхронно
-            JobExecution execution = jobLauncher.run(job, builder.toJobParameters());
+            JobExecution execution = format.equalsIgnoreCase("csv")
+                    ? jobLauncher.run(csvJob, builder.toJobParameters())
+                    : jobLauncher.run(jsonJob, builder.toJobParameters());
 
             // Проверяем результат выполнения
             if (execution.getStatus() != BatchStatus.COMPLETED) {
@@ -67,34 +81,35 @@ public class ImportExportController {
             }
 
             // Проверяем существование файла
-            File csvFile = new File(outputPath);
-            if (!csvFile.exists() || csvFile.length() == 0) {
+            File file = new File(outputPath);
+            if (!file.exists() || file.length() == 0) {
                 return ResponseEntity.notFound().build();
             }
 
             // Подготавливаем файл для скачивания
-            Resource resource = new InputStreamResource(new FileInputStream(csvFile)) {
+            Resource resource = new InputStreamResource(new FileInputStream(file)) {
                 @Override
                 public InputStream getInputStream() throws IOException {
-                    return new FileInputStream(csvFile) {
+                    return new FileInputStream(file) {
                         @Override
                         public void close() throws IOException {
                             super.close();
                             // Удаляем файл после закрытия потока
-                            scheduleDeletion(csvFile);
+                            scheduleDeletion(file);
                         }
                     };
                 }
             };
 
             // Формируем имя файла для скачивания
-            String downloadFileName = String.format("trips_%s.csv",
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")));
+            String downloadFileName = String.format("trips_%s.%s",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")),
+                    format.equalsIgnoreCase("csv") ? "csv" : "json");
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadFileName + "\"")
-                    .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
-                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(csvFile.length()))
+                    .header(HttpHeaders.CONTENT_TYPE, String.format("text/%s; charset=UTF-8", format.equalsIgnoreCase("csv") ? "csv" : "json"))
+                    .header(HttpHeaders.CONTENT_LENGTH, String.valueOf(file.length()))
                     .body(resource);
 
         } catch (Exception e) {
