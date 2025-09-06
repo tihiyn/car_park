@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     @Query(value = "SELECT v FROM Vehicle v WHERE cast(v.id as string) = :keyword"
@@ -26,4 +27,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findByKeyword(@Param("keyword") String keyword);
 
     Page<Vehicle> findAllByEnterpriseIn(List<Enterprise> enterprises, Pageable pageable);
+
+    Optional<Vehicle> findByRegNum(String regNum);
 }

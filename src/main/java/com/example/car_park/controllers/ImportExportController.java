@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +44,12 @@ public class ImportExportController {
     @Autowired
     @Qualifier("jsonExportJob")
     private Job jsonJob;
+    @Autowired
+    @Qualifier("jsonImportJob")
+    private Job jsonImportJob;
+    @Autowired
+    @Qualifier("csvImportJob")
+    private Job csvImportJob;
 
     private static final String TEMP_DIR = System.getProperty("java.io.tmpdir") + "/batch-exports/";
 
@@ -116,6 +123,32 @@ public class ImportExportController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
+        }
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<String> importJson(@RequestParam(defaultValue = "json", required = false) String format,
+                                             @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
+
+        try {
+            // Сохраняем временно файл на диск
+            File tempFile = File.createTempFile("import-", ".csv");
+            file.transferTo(tempFile);
+
+            JobParametersBuilder jobParameters = new JobParametersBuilder()
+                    .addString("path", tempFile.getAbsolutePath())
+                    .addLong("timestamp", System.currentTimeMillis());
+
+            JobExecution execution = jobLauncher.run(csvImportJob, jobParameters.toJobParameters());
+
+            return ResponseEntity.ok("Job started with status: " + execution.getStatus());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to start job: " + e.getMessage());
         }
     }
 
