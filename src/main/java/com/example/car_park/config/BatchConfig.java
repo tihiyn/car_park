@@ -48,10 +48,13 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -64,6 +67,8 @@ public class BatchConfig {
     private final VehicleRepository vehicleRepository;
     private final VehicleLocationRepository vehicleLocationRepository;
 
+    private static final Map<String, UUID> ID_CACHE = new ConcurrentHashMap<>();
+
     @Bean
     public Job csvExportJob() {
         return new JobBuilder("csvExportJob", jobRepository)
@@ -74,7 +79,7 @@ public class BatchConfig {
     @Bean
     public Step csvExportStep() {
         return new StepBuilder("csvExportStep", jobRepository)
-                .<Trip, TripCsvExportDto>chunk(100, transactionManager) // chunk size = 100
+                .<Trip, TripCsvExportDto>chunk(100, transactionManager)
                 .reader(reader(null, null, null))
                 .processor(csvProcessor())
                 .writer(csvWriter(null))
@@ -133,12 +138,12 @@ public class BatchConfig {
             VehicleLocation begin = trip.getBeginLocation();
             VehicleLocation end = trip.getEndLocation();
             return new TripCsvExportDto(
-                    enterprise.getId(),
+                    ID_CACHE.computeIfAbsent("enterprise" + enterprise.getId(), id -> UUID.randomUUID()),
                     enterprise.getName(),
                     enterprise.getCity(),
                     enterprise.getRegistrationNumber(),
                     enterprise.getTimeZone(),
-                    vehicle.getId(),
+                    ID_CACHE.computeIfAbsent("vehicle" + enterprise.getId(), id -> UUID.randomUUID()),
                     vehicle.getRegNum(),
                     vehicle.getPrice(),
                     vehicle.getMileage(),
@@ -146,13 +151,13 @@ public class BatchConfig {
                     vehicle.getColor(),
                     vehicle.isAvailable(),
                     vehicle.getPurchaseDatetime().withZoneSameInstant(zone),
-                    trip.getId(),
+                    ID_CACHE.computeIfAbsent("trip" + enterprise.getId(), id -> UUID.randomUUID()),
                     trip.getBegin().withZoneSameInstant(zone),
                     trip.getEnd().withZoneSameInstant(zone),
-                    begin.getId(),
+                    ID_CACHE.computeIfAbsent("vehicleLocation" + enterprise.getId(), id -> UUID.randomUUID()),
                     begin.getLocation(),
                     begin.getTimestamp().withZoneSameInstant(zone),
-                    end.getId(),
+                    ID_CACHE.computeIfAbsent("vehicleLocation" + enterprise.getId(), id -> UUID.randomUUID()),
                     end.getLocation(),
                     end.getTimestamp().withZoneSameInstant(zone)
             );
@@ -222,7 +227,8 @@ public class BatchConfig {
 
     @Bean
     public ItemProcessor<Trip, EnterpriseExportDto> jsonProcessor() {
-        Map<Long, EnterpriseExportDto> cache = new HashMap<>();
+        Map<Long, EnterpriseExportDto> enterpriseCache = new HashMap<>();
+        Map<Long, Set<Long>> enterpriseVehicleIds = new HashMap<>(); // id автомобилей для каждого предприятия
 
         return trip -> {
             Vehicle vehicle = trip.getVehicle();
@@ -230,54 +236,64 @@ public class BatchConfig {
             ZoneId zone = enterprise.getTimeZone();
 
             // Получаем или создаём Enterprise DTO
-            EnterpriseExportDto enterpriseDto = cache.computeIfAbsent(
+            EnterpriseExportDto enterpriseDto = enterpriseCache.computeIfAbsent(
                     enterprise.getId(),
                     id -> new EnterpriseExportDto()
-                            .setId(enterprise.getId())
+                            .setId(ID_CACHE.computeIfAbsent("enterprise" + enterprise.getId(), eId -> UUID.randomUUID()))
                             .setName(enterprise.getName())
                             .setCity(enterprise.getCity())
                             .setRegistrationNumber(enterprise.getRegistrationNumber())
-                            .setTimeZone(enterprise.getTimeZone())
+                            .setTimeZone(zone)
                             .setVehicles(new ArrayList<>())
             );
 
-            // Ищем Vehicle DTO
-            EnterpriseExportDto.VehicleExportDto vehicleDto = enterpriseDto.getVehicles().stream()
-                    .filter(v -> v.getId().equals(vehicle.getId()))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        EnterpriseExportDto.VehicleExportDto newVehicle = new EnterpriseExportDto.VehicleExportDto()
-                                .setId(vehicle.getId())
-                                .setRegNum(vehicle.getRegNum())
-                                .setPrice(vehicle.getPrice())
-                                .setMileage(vehicle.getMileage())
-                                .setProductionYear(vehicle.getProductionYear())
-                                .setColor(vehicle.getColor())
-                                .setAvailable(vehicle.isAvailable())
-                                .setPurchaseDatetime(vehicle.getPurchaseDatetime().withZoneSameInstant(zone).toString())
-                                .setTrips(new ArrayList<>());
-                        enterpriseDto.getVehicles().add(newVehicle);
-                        return newVehicle;
-                    });
+            // Инициализируем Set для автомобилей предприятия
+            enterpriseVehicleIds.computeIfAbsent(enterprise.getId(), id -> new HashSet<>());
+
+            EnterpriseExportDto.VehicleExportDto vehicleDto;
+
+            // Если автомобиль ещё не добавлен, создаём его
+            if (!enterpriseVehicleIds.get(enterprise.getId()).contains(vehicle.getId())) {
+                vehicleDto = new EnterpriseExportDto.VehicleExportDto()
+                        .setId(ID_CACHE.computeIfAbsent("vehicle" + vehicle.getId(), vId -> UUID.randomUUID()))
+                        .setRegNum(vehicle.getRegNum())
+                        .setPrice(vehicle.getPrice())
+                        .setMileage(vehicle.getMileage())
+                        .setProductionYear(vehicle.getProductionYear())
+                        .setColor(vehicle.getColor())
+                        .setAvailable(vehicle.isAvailable())
+                        .setPurchaseDatetime(vehicle.getPurchaseDatetime().withZoneSameInstant(zone).toString())
+                        .setTrips(new ArrayList<>());
+                enterpriseDto.getVehicles().add(vehicleDto);
+                enterpriseVehicleIds.get(enterprise.getId()).add(vehicle.getId());
+            } else {
+                // Иначе находим существующий Vehicle DTO
+                vehicleDto = enterpriseDto.getVehicles().stream()
+                        .filter(v -> v.getId().equals(ID_CACHE.get("vehicle" + vehicle.getId())))
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("Vehicle должен существовать"));
+            }
 
             // Добавляем поездку
             EnterpriseExportDto.VehicleExportDto.TripJsonExportDto tripDto = new EnterpriseExportDto.VehicleExportDto.TripJsonExportDto()
-                    .setId(trip.getId())
+                    .setId(ID_CACHE.computeIfAbsent("trip" + trip.getId(), id -> UUID.randomUUID()))
                     .setBegin(trip.getBegin().withZoneSameInstant(zone).toString())
                     .setEnd(trip.getEnd().withZoneSameInstant(zone).toString())
                     .setBeginLocation(new EnterpriseExportDto.VehicleExportDto.TripJsonExportDto.VehicleLocationExportDto()
-                            .setId(trip.getBeginLocation().getId())
+                            .setId(ID_CACHE.computeIfAbsent("vehicleLocation" + trip.getBeginLocation().getId(), id -> UUID.randomUUID()))
                             .setLocation(trip.getBeginLocation().getLocation().toString())
                             .setTimestamp(trip.getBeginLocation().getTimestamp().withZoneSameInstant(zone).toString()))
                     .setEndLocation(new EnterpriseExportDto.VehicleExportDto.TripJsonExportDto.VehicleLocationExportDto()
-                            .setId(trip.getEndLocation().getId())
+                            .setId(ID_CACHE.computeIfAbsent("vehicleLocation" + trip.getEndLocation().getId(), id -> UUID.randomUUID()))
                             .setLocation(trip.getEndLocation().getLocation().toString())
                             .setTimestamp(trip.getEndLocation().getTimestamp().withZoneSameInstant(zone).toString()));
+
             vehicleDto.getTrips().add(tripDto);
 
             return enterpriseDto;
         };
     }
+
 
     @Bean
     @StepScope
@@ -286,31 +302,34 @@ public class BatchConfig {
     ) {
         return items -> {
             // Агрегируем дубли Enterprise
-            Map<Long, EnterpriseExportDto> aggregated = new HashMap<>();
+            Map<UUID, EnterpriseExportDto> aggregated = new ConcurrentHashMap<>();
+
             for (EnterpriseExportDto e : items) {
                 aggregated.merge(e.getId(), e, (oldE, newE) -> {
-                    newE.getVehicles().forEach(vehicle -> {
-                        // объединяем машины
-                        EnterpriseExportDto.VehicleExportDto v = oldE.getVehicles().stream()
+                    for (EnterpriseExportDto.VehicleExportDto vehicle : newE.getVehicles()) {
+                        EnterpriseExportDto.VehicleExportDto existingVehicle = oldE.getVehicles().stream()
                                 .filter(x -> x.getId().equals(vehicle.getId()))
                                 .findFirst()
                                 .orElse(null);
-                        if (v != null) {
-                            // Объединяем поездки, исключая дубликаты по ID
-                            Set<Long> existingTripIds = v.getTrips().stream()
+
+                        if (existingVehicle != null) {
+                            // Объединяем поездки без дубликатов
+                            Set<UUID> existingTripIds = existingVehicle.getTrips().stream()
                                     .map(EnterpriseExportDto.VehicleExportDto.TripJsonExportDto::getId)
                                     .collect(Collectors.toSet());
 
                             vehicle.getTrips().stream()
                                     .filter(trip -> !existingTripIds.contains(trip.getId()))
-                                    .forEach(trip -> v.getTrips().add(trip));
+                                    .forEach(trip -> existingVehicle.getTrips().add(trip));
                         } else {
+                            // Добавляем новую машину
                             oldE.getVehicles().add(vehicle);
                         }
-                    });
+                    }
                     return oldE;
                 });
             }
+
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.findAndRegisterModules();
@@ -365,24 +384,16 @@ public class BatchConfig {
         return enterpriseDto -> {
             System.out.println("Start processing enterprise ID: " + enterpriseDto.getId());
             // Проверяем наличие Enterprise
-            Enterprise enterprise = enterpriseRepository.findById(enterpriseDto.getId())
-                    .orElseGet(() -> {
-                        Enterprise e = new Enterprise();
-                        e.setName(enterpriseDto.getName());
-                        e.setCity(enterpriseDto.getCity());
-                        e.setRegistrationNumber(enterpriseDto.getRegistrationNumber());
-                        e.setTimeZone(enterpriseDto.getTimeZone());
-                        return e;
-                    });
+            Enterprise enterprise = new Enterprise()
+                        .setName(enterpriseDto.getName())
+                        .setCity(enterpriseDto.getCity())
+                        .setRegistrationNumber(enterpriseDto.getRegistrationNumber())
+                        .setTimeZone(enterpriseDto.getTimeZone());
 
             // Сопоставляем машины
             for (EnterpriseExportDto.VehicleExportDto vehicleDto : enterpriseDto.getVehicles()) {
-                Vehicle vehicle = vehicleRepository.findById(vehicleDto.getId())
-                        .orElseGet(() -> {
-                            Vehicle v = new Vehicle();
-                            v.setEnterprise(enterprise);
-                            return v;
-                        });
+                Vehicle vehicle = new Vehicle()
+                            .setEnterprise(enterprise);
                 vehicle.setRegNum(vehicleDto.getRegNum());
                 vehicle.setPrice(vehicleDto.getPrice());
                 vehicle.setMileage(vehicleDto.getMileage());
@@ -393,12 +404,9 @@ public class BatchConfig {
 
                 // Добавляем поездки
                 for (EnterpriseExportDto.VehicleExportDto.TripJsonExportDto tripDto : vehicleDto.getTrips()) {
-                    Trip trip = tripRepository.findById(tripDto.getId())
-                            .orElseGet(() -> {
-                                Trip t = new Trip();
-                                t.setVehicle(vehicle);
-                                return t;
-                            });
+                    Trip trip = new Trip()
+                                .setVehicle(vehicle);
+
                     trip.setBegin(ZonedDateTime.parse(tripDto.getBegin()));
                     trip.setEnd(ZonedDateTime.parse(tripDto.getEnd()));
 

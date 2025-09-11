@@ -4,15 +4,16 @@ import org.locationtech.jts.geom.Point;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.UUID;
 
 public record TripCsvExportDto(
-        Long enterpriseId,
+        UUID enterpriseId,
         String name,
         String city,
         String registrationNumber,
         ZoneId timeZone,
 
-        Long vehicleId,
+        UUID vehicleId,
         String regNum,
         Integer price,
         Integer mileage,
@@ -21,15 +22,15 @@ public record TripCsvExportDto(
         boolean isAvailable,
         ZonedDateTime purchaseDatetime,
 
-        Long tripId,
+        UUID tripId,
         ZonedDateTime begin,
         ZonedDateTime end,
 
-        Long startVehicleLocationId,
+        UUID startVehicleLocationId,
         Point startLocation,
         ZonedDateTime startTimestamp,
 
-        Long endVehicleLocationId,
+        UUID endVehicleLocationId,
         Point endLocation,
         ZonedDateTime endTimestamp
 ) {}

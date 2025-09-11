@@ -5,11 +5,12 @@ import lombok.experimental.Accessors;
 
 import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Accessors(chain = true)
 public class EnterpriseExportDto {
-    private Long id;
+    private UUID id;
     private String name;
     private String city;
     private String registrationNumber;
@@ -18,7 +19,7 @@ public class EnterpriseExportDto {
 
     @Data
     public static class VehicleExportDto {
-        private Long id;
+        private UUID id;
         private String regNum;
         private Integer price;
         private Integer mileage;
@@ -30,7 +31,7 @@ public class EnterpriseExportDto {
 
         @Data
         public static class TripJsonExportDto {
-            private Long id;
+            private UUID id;
             private String begin;
             private String end;
             private VehicleLocationExportDto beginLocation;
@@ -38,7 +39,7 @@ public class EnterpriseExportDto {
 
             @Data
             public static class VehicleLocationExportDto {
-                private Long id;
+                private UUID id;
                 private String location;
                 private String timestamp;
             }

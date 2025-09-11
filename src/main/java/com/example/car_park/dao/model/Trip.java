@@ -12,6 +12,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.ZonedDateTime;
 
@@ -19,6 +20,7 @@ import java.time.ZonedDateTime;
 @Table(name = "trips")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Trip {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

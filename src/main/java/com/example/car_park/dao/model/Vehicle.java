@@ -14,6 +14,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.JoinColumn;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
