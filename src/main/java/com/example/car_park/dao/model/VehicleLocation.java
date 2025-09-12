@@ -9,6 +9,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.locationtech.jts.geom.Point;
 
 import java.time.ZonedDateTime;
@@ -17,6 +18,7 @@ import java.time.ZonedDateTime;
 @Table(name = "vehicle_locations")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class VehicleLocation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

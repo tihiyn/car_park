@@ -14,9 +14,11 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.CascadeType;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -25,6 +27,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 @Table(name = "enterprises")
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Enterprise {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -40,7 +43,7 @@ public class Enterprise {
 
     @OneToMany(mappedBy = "enterprise",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    private List<Vehicle> vehicles;
+    private List<Vehicle> vehicles = new ArrayList<>();
     @OneToMany(mappedBy = "enterprise",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     private List<Driver> drivers;

@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.FetchType;
@@ -13,6 +14,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.JoinColumn;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@Accessors(chain = true)
 public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,4 +53,6 @@ public class Vehicle {
             inverseJoinColumns = {@JoinColumn(name = "driver_id")}
     )
     private List<Driver> drivers = new ArrayList<>();
+    @OneToMany(mappedBy = "vehicle", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Trip> trips = new ArrayList<>();
 }
