@@ -28,5 +28,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     Page<Vehicle> findAllByEnterpriseIn(List<Enterprise> enterprises, Pageable pageable);
 
+    List<Vehicle> findAllByEnterpriseIn(List<Enterprise> enterprises);
+
     Optional<Vehicle> findByRegNum(String regNum);
 }

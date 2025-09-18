@@ -93,7 +93,7 @@ public class TripService {
                 .toList();
     }
 
-    private List<Trip> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
+    public List<Trip> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
         return tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
                         vehicle,
                         begin.withZoneSameInstant(ZoneId.of("UTC")),

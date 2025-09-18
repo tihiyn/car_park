@@ -208,4 +208,9 @@ public class VehicleService {
 //                .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationJsonDto(location, timeZone, format))
 //                .toList();
 //    }
+
+    public List<Vehicle> findAllByUser(User user) {
+        List<Enterprise> enterprises = managerService.getManagerByUser(user).getManagedEnterprises();
+        return vehicleRepository.findAllByEnterpriseIn(enterprises);
+    }
 }
