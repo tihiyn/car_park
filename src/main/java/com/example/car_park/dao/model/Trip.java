@@ -28,6 +28,7 @@ public class Trip {
     private ZonedDateTime begin;
     @Column(name = "\"end\"")
     private ZonedDateTime end;
+    private Long length;
 
     // TODO: добавить параметры для аннотаций
     @ManyToOne

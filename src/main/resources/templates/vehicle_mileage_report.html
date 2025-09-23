@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${report.name}">Vehicle Mileage Report</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container my-5">
+    <!-- Заголовок отчета -->
+    <h1 class="mb-4 text-center" th:text="${report.name}">Vehicle Mileage Report</h1>
+
+    <!-- Период -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <p>
+                <strong>Период:</strong>
+                <span th:text="${report.period.getName()}">PERIOD</span>
+            </p>
+            <p>
+                <strong>Начало:</strong>
+                <span th:text="${#temporals.format(report.begin, 'dd.MM.yyyy')}">2025-09-01 00:00</span>
+            </p>
+            <p>
+                <strong>Конец:</strong>
+                <span th:text="${#temporals.format(report.end, 'dd.MM.yyyy')}">2025-09-15 23:59</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Таблица результатов -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Результаты</h5>
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                <tr>
+                    <th scope="col">Период</th>
+                    <th scope="col">Пробег</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${report.result}">
+                    <td th:text="${entry.key}">Some Key</td>
+                    <td th:text="${entry.value}">12345</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-3 text-end">
+                <a class="btn btn-success"
+                   th:href="@{'/api/ui/reports/vehicle/mileage/export'(id=${report.getVehicleId()}, period=${report.period}, begin=${report.begin}, end=${report.end})}">
+                    Скачать отчёт
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+<!-- Bootstrap JS (опционально) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

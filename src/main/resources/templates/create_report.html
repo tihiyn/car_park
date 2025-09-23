@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Создание отчёта</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+          crossorigin="anonymous">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Создание отчёта</h1>
+
+    <form id="reportForm" method="get" action="">
+        <!-- Тип отчёта -->
+        <div class="mb-3">
+            <label for="reportType" class="form-label">Тип отчёта<span class="text-danger">*</span></label>
+            <select id="reportType" name="reportType" class="form-select" required>
+                <option value="" disabled selected>Выберите тип отчёта</option>
+                <option value="mileage">Пробег авто</option>
+                <option value="enterpriseVehicles">Количество автомобилей по годам производства</option>
+                <option value="enterpriseDrivers">Средняя зарплата водителей в предприятии</option>
+            </select>
+        </div>
+
+        <!-- mileage -->
+        <div class="report-fields" data-report-type="mileage">
+            <div class="mb-3">
+                <label for="vehicleId" class="form-label">Номер авто<span class="text-danger">*</span></label>
+                <select id="vehicleId" name="id" class="form-select">
+                    <option value="" disabled selected>Выберите авто</option>
+                    <option th:each="vehicle : ${vehicles}"
+                            th:value="${vehicle.id}"
+                            th:text="${vehicle.regNum}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="period" class="form-label">Период<span class="text-danger">*</span></label>
+                <select id="period" name="period" class="form-select">
+                    <option value="" disabled selected>Выберите период</option>
+                    <option value="day">По дням</option>
+                    <option value="month">По месяцам</option>
+                    <option value="year">По годам</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="begin" class="form-label">Начиная с<span class="text-danger">*</span></label>
+                <input type="datetime-local" id="begin" class="form-control">
+                <input type="hidden" name="begin" id="hidden-begin" />
+            </div>
+
+            <div class="mb-3">
+                <label for="end" class="form-label">Заканчивая<span class="text-danger">*</span></label>
+                <input type="datetime-local" id="end" class="form-control">
+                <input type="hidden" name="end" id="hidden-end" />
+            </div>
+        </div>
+
+        <!-- enterpriseVehicles -->
+        <div class="report-fields" data-report-type="enterpriseVehicles">
+            <div class="mb-3">
+                <label for="enterpriseId" class="form-label">Название предприятия<span class="text-danger">*</span></label>
+                <select id="enterpriseId" name="id" class="form-select">
+                    <option value="" disabled selected>Выберите предприятие</option>
+                    <option th:each="enterprise : ${enterprises}"
+                            th:value="${enterprise.id}"
+                            th:text="${enterprise.name}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="beginYear" class="form-label">Начиная с</label>
+                <input type="number" id="beginYear" name="beginYear" class="form-control" min="1970" max="2025" step="1">
+            </div>
+
+            <div class="mb-3">
+                <label for="endYear" class="form-label">Заканчивая</label>
+                <input type="number" id="endYear" name="endYear" class="form-control" min="1970" max="2025" step="1">
+            </div>
+        </div>
+
+        <!-- enterpriseDrivers -->
+        <div class="report-fields" data-report-type="enterpriseDrivers">
+            <div class="mb-3">
+                <label for="enterpriseId2" class="form-label">Название предприятия<span class="text-danger">*</span></label>
+                <select id="enterpriseId2" name="id" class="form-select">
+                    <option value="" disabled selected>Выберите предприятие</option>
+                    <option th:each="enterprise : ${enterprises}"
+                            th:value="${enterprise.id}"
+                            th:text="${enterprise.name}">
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Создать отчёт</button>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const reportTypeSelect = document.getElementById("reportType");
+        const reportFields = document.querySelectorAll(".report-fields");
+
+        function updateFields() {
+            const selectedType = reportTypeSelect.value;
+
+            reportFields.forEach(group => {
+                if (group.dataset.reportType === selectedType) {
+                    group.style.display = "block";
+                    group.querySelectorAll("input, select").forEach(el => {
+                        if (el.dataset.originalName) {
+                            el.name = el.dataset.originalName;
+                        }
+                        el.required = true;
+                    });
+                } else {
+                    group.style.display = "none";
+                    group.querySelectorAll("input, select").forEach(el => {
+                        if (el.name) {
+                            el.dataset.originalName = el.name; // запоминаем оригинальное имя
+                            el.removeAttribute("name"); // убираем, чтобы не отправлялось
+                        }
+                        el.required = false;
+                    });
+                }
+            });
+        }
+
+        reportTypeSelect.removeAttribute("name");
+        reportTypeSelect.addEventListener("change", updateFields);
+
+        // при загрузке сразу применим
+        updateFields();
+    });
+
+    document.getElementById('reportForm').addEventListener('submit', function (e) {
+        const reportType = document.getElementById('reportType').value;
+        if (reportType === 'mileage') {
+            this.action = '/api/ui/reports/vehicle/mileage';
+        } else if (reportType === 'enterpriseVehicles') {
+            this.action = '/api/ui/reports/enterprise/production';
+        } else if (reportType === 'enterpriseDrivers') {
+            this.action = '/api/ui/reports/enterprise/salary';
+        }
+
+        // преобразуем даты для mileage
+        function toLocalISOString(date) {
+            const tzOffset = -date.getTimezoneOffset();
+            const sign = tzOffset >= 0 ? "+" : "-";
+            const diffHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+            return date.getFullYear() +
+                "-" + String(date.getMonth() + 1).padStart(2, '0') +
+                "-" + String(date.getDate()).padStart(2, '0') +
+                "T" + String(date.getHours()).padStart(2, '0') +
+                ":" + String(date.getMinutes()).padStart(2, '0') +
+                sign + diffHours;
+        }
+
+        const beginInput = document.getElementById('begin');
+        if (beginInput && beginInput.value) {
+            const hiddenBeginInput = document.getElementById('hidden-begin');
+            const beginDate = new Date(beginInput.value);
+            hiddenBeginInput.value = toLocalISOString(beginDate);
+        }
+
+        const endInput = document.getElementById('end');
+        if (endInput && endInput.value) {
+            const hiddenEndInput = document.getElementById('hidden-end');
+            const endDate = new Date(endInput.value);
+            hiddenEndInput.value = toLocalISOString(endDate);
+        }
+    });
+</script>
+
+</body>
+</html>

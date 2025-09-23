@@ -8,7 +8,6 @@
           rel="stylesheet"
           integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
           crossorigin="anonymous">
-<!--    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/css/select2.min.css" rel="stylesheet" />-->
     <style>
         .vehicle-badge {
             padding-right: 1.5rem; /* Увеличиваем отступ справа для крестика */
@@ -16,7 +15,6 @@
             align-items: center;
             position: relative;
         }
-
         .btn-close {
             position: absolute;
             top: 50%;
@@ -34,7 +32,10 @@
 </head>
 <body>
 <div class="container mt-5">
-    <h1 class="mb-4">Список предприятий</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Список предприятий</h1>
+        <a href="/api/ui/reports/create" class="btn btn-primary">Создать отчёт</a>
+    </div>
 
     <table class="table table-striped table-bordered">
         <thead class="table-dark">
@@ -104,21 +105,5 @@
         });
     }
 </script>
-<!--<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>-->
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0/js/select2.min.js"></script>-->
-<!--<script>-->
-<!--    $(document).ready(function () {-->
-<!--        // Инициализация Select2-->
-<!--        $('.timezone-select').select2({-->
-<!--            width: '100%',-->
-<!--            placeholder: 'Выберите часовой пояс'-->
-<!--        });-->
-
-<!--        // Отправка формы при изменении значения-->
-<!--        $('.timezone-select').on('change', function () {-->
-<!--            $(this).closest('.timezone-form').submit();-->
-<!--        });-->
-<!--    });-->
-<!--</script>-->
 </body>
 </html>

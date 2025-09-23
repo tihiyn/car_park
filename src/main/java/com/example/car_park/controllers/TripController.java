@@ -1,8 +1,6 @@
 package com.example.car_park.controllers;
 
-import com.example.car_park.controllers.dto.response.TripDto;
 import com.example.car_park.controllers.dto.response.TripsViewModel;
-import com.example.car_park.dao.model.Trip;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.service.TripService;
 import lombok.RequiredArgsConstructor;
