@@ -1,10 +1,6 @@
 package com.example.car_park.service;
 
-import com.example.car_park.controllers.dto.response.GeoJsonFeature;
-import com.example.car_park.controllers.dto.response.GeoJsonFeatureCollection;
-import com.example.car_park.controllers.dto.response.GeoJsonGeometry;
-import com.example.car_park.controllers.dto.response.TripDto;
-import com.example.car_park.controllers.dto.response.TripsViewModel;
+import com.example.car_park.controllers.dto.response.*;
 import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.mapper.TripMapper;
@@ -14,11 +10,14 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import com.example.car_park.enums.Format;
+import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -143,4 +142,46 @@ public class TripService {
         return result;
     }
 
+    public void saveFromFile(User user, Long vehicleId) {
+        GPX gpx;
+        try {
+            gpx = GPX.read(Path.of("track.gpx"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Vehicle vehicle = vehicleService.findById(user, vehicleId);
+        List<VehicleLocation> locations = gpx.getWayPoints().stream()
+            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle))
+            .toList();
+        if (locations.isEmpty()) {
+            return;
+        }
+        VehicleLocation begin = locations.getFirst();
+        VehicleLocation end = locations.getLast();
+        checkTripNotIntersectsWithOthers(vehicle, begin, end);
+        saveNewTrip(vehicle, locations, begin, end);
+    }
+
+    private void checkTripNotIntersectsWithOthers(Vehicle vehicle,
+                                                  VehicleLocation begin,
+                                                  VehicleLocation end) {
+        List<Trip> trips = tripRepository.findAllByVehicle(vehicle);
+        if (trips.stream()
+            .anyMatch(t -> t.getBegin().isBefore(begin.getTimestamp()) && t.getEnd().isAfter(begin.getTimestamp())
+                || t.getBegin().isBefore(end.getTimestamp()) && t.getEnd().isBefore(end.getTimestamp()))) {
+            throw new RuntimeException();
+        }
+    }
+
+    private void saveNewTrip(Vehicle vehicle, List<VehicleLocation> locations,
+                             VehicleLocation begin, VehicleLocation end) {
+        Trip newTrip = new Trip()
+            .setBegin(begin.getTimestamp())
+            .setBeginLocation(begin)
+            .setEnd(end.getTimestamp())
+            .setEndLocation(end)
+            .setVehicle(vehicle);
+        vehicleLocationRepository.saveAll(locations);
+        tripRepository.save(newTrip);
+    }
 }

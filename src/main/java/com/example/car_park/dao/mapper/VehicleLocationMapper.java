@@ -1,7 +1,9 @@
 package com.example.car_park.dao.mapper;
 
 import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
+import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
+import io.jenetics.jpx.WayPoint;
 import org.locationtech.jts.geom.Point;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -45,4 +47,6 @@ public interface VehicleLocationMapper {
                 "features", features
         );
     }
+
+    VehicleLocation wayPointToVehicleLocation(WayPoint wp, Vehicle vehicle);
 }

@@ -15,4 +15,5 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                                                                                          ZonedDateTime begin,
                                                                                          ZonedDateTime end,
                                                                                          Pageable pageable);
+    List<Trip> findAllByVehicle(Vehicle vehicle);
 }
