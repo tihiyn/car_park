@@ -150,8 +150,9 @@ public class TripService {
             throw new RuntimeException(e);
         }
         Vehicle vehicle = vehicleService.findById(user, vehicleId);
+        ZoneId tz = vehicle.getEnterprise().getTimeZone();
         List<VehicleLocation> locations = gpx.getWayPoints().stream()
-            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle))
+            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle, tz))
             .toList();
         if (locations.isEmpty()) {
             return;
