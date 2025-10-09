@@ -15,8 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -142,36 +144,39 @@ public class TripService {
         return result;
     }
 
-    public void saveFromFile(User user, Long vehicleId) {
+    public void saveFromFile(User user, Long vehicleId, MultipartFile file) {
         GPX gpx;
         try {
-            gpx = GPX.read(Path.of("track.gpx"));
+            Path tempFile = Files.createTempFile("trip-", ".gpx");
+            file.transferTo(tempFile);
+            gpx = GPX.read(tempFile);
+            Files.deleteIfExists(tempFile);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Не удалось загрузить файл поездки");
         }
         Vehicle vehicle = vehicleService.findById(user, vehicleId);
         ZoneId tz = vehicle.getEnterprise().getTimeZone();
-        List<VehicleLocation> locations = gpx.getWayPoints().stream()
+        List<VehicleLocation> locations = gpx.getTracks().get(0).getSegments().get(0).getPoints().stream()
             .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle, tz))
             .toList();
         if (locations.isEmpty()) {
-            return;
+            throw new RuntimeException("В файле отсутствуют поездки");
         }
         VehicleLocation begin = locations.getFirst();
         VehicleLocation end = locations.getLast();
-        checkTripNotIntersectsWithOthers(vehicle, begin, end);
+        if (!checkTripNotIntersectsWithOthers(vehicle, begin, end)) {
+            throw new RuntimeException("Поездка пересекается с существующими");
+        }
         saveNewTrip(vehicle, locations, begin, end);
     }
 
-    private void checkTripNotIntersectsWithOthers(Vehicle vehicle,
+    private boolean checkTripNotIntersectsWithOthers(Vehicle vehicle,
                                                   VehicleLocation begin,
                                                   VehicleLocation end) {
         List<Trip> trips = tripRepository.findAllByVehicle(vehicle);
-        if (trips.stream()
-            .anyMatch(t -> t.getBegin().isBefore(begin.getTimestamp()) && t.getEnd().isAfter(begin.getTimestamp())
-                || t.getBegin().isBefore(end.getTimestamp()) && t.getEnd().isBefore(end.getTimestamp()))) {
-            throw new RuntimeException();
-        }
+        return trips.stream()
+            .noneMatch(t -> t.getBegin().isBefore(begin.getTimestamp()) && t.getEnd().isAfter(begin.getTimestamp())
+                || t.getBegin().isBefore(end.getTimestamp()) && t.getEnd().isAfter(end.getTimestamp()));
     }
 
     private void saveNewTrip(Vehicle vehicle, List<VehicleLocation> locations,
