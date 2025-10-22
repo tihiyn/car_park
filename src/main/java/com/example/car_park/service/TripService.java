@@ -1,10 +1,6 @@
 package com.example.car_park.service;
 
-import com.example.car_park.controllers.dto.response.GeoJsonFeature;
-import com.example.car_park.controllers.dto.response.GeoJsonFeatureCollection;
-import com.example.car_park.controllers.dto.response.GeoJsonGeometry;
-import com.example.car_park.controllers.dto.response.TripDto;
-import com.example.car_park.controllers.dto.response.TripsViewModel;
+import com.example.car_park.controllers.dto.response.*;
 import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.mapper.TripMapper;
@@ -14,11 +10,16 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import com.example.car_park.enums.Format;
+import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -143,4 +144,50 @@ public class TripService {
         return result;
     }
 
+    public void saveFromFile(User user, Long vehicleId, MultipartFile file) {
+        GPX gpx;
+        try {
+            Path tempFile = Files.createTempFile("trip-", ".gpx");
+            file.transferTo(tempFile);
+            gpx = GPX.read(tempFile);
+            Files.deleteIfExists(tempFile);
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось загрузить файл поездки");
+        }
+        Vehicle vehicle = vehicleService.findById(user, vehicleId);
+        ZoneId tz = vehicle.getEnterprise().getTimeZone();
+        List<VehicleLocation> locations = gpx.getTracks().get(0).getSegments().get(0).getPoints().stream()
+            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle, tz))
+            .toList();
+        if (locations.isEmpty()) {
+            throw new RuntimeException("В файле отсутствуют поездки");
+        }
+        VehicleLocation begin = locations.getFirst();
+        VehicleLocation end = locations.getLast();
+        if (!checkTripNotIntersectsWithOthers(vehicle, begin, end)) {
+            throw new RuntimeException("Поездка пересекается с существующими");
+        }
+        saveNewTrip(vehicle, locations, begin, end);
+    }
+
+    private boolean checkTripNotIntersectsWithOthers(Vehicle vehicle,
+                                                  VehicleLocation begin,
+                                                  VehicleLocation end) {
+        List<Trip> trips = tripRepository.findAllByVehicle(vehicle);
+        return trips.stream()
+            .noneMatch(t -> t.getBegin().isBefore(begin.getTimestamp()) && t.getEnd().isAfter(begin.getTimestamp())
+                || t.getBegin().isBefore(end.getTimestamp()) && t.getEnd().isAfter(end.getTimestamp()));
+    }
+
+    private void saveNewTrip(Vehicle vehicle, List<VehicleLocation> locations,
+                             VehicleLocation begin, VehicleLocation end) {
+        Trip newTrip = new Trip()
+            .setBegin(begin.getTimestamp())
+            .setBeginLocation(begin)
+            .setEnd(end.getTimestamp())
+            .setEndLocation(end)
+            .setVehicle(vehicle);
+        vehicleLocationRepository.saveAll(locations);
+        tripRepository.save(newTrip);
+    }
 }

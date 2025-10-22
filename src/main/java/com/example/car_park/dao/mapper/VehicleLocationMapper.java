@@ -1,13 +1,19 @@
 package com.example.car_park.dao.mapper;
 
 import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
+import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
+import io.jenetics.jpx.WayPoint;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,5 +50,27 @@ public interface VehicleLocationMapper {
                 "type", "FeatureCollection",
                 "features", features
         );
+    }
+
+    @Mappings({
+        @Mapping(target = "id", ignore = true),
+        @Mapping(target = "location", expression = "java(getPointFromWayPoint(wp))"),
+        @Mapping(target = "timestamp", expression = "java(getTimestampFromTime(wp, tz))")
+    })
+    VehicleLocation wayPointToVehicleLocation(WayPoint wp, Vehicle vehicle, ZoneId tz);
+
+    default Point getPointFromWayPoint(WayPoint wp) {
+        return new GeometryFactory(new PrecisionModel(), 4326)
+            .createPoint(new Coordinate(
+                wp.getLongitude().doubleValue(),
+                wp.getLatitude().doubleValue()
+            ));
+    }
+
+    default ZonedDateTime getTimestampFromTime(WayPoint wp, ZoneId tz) {
+        if (wp.getTime().isEmpty()) {
+            return null;
+        }
+        return ZonedDateTime.ofInstant(wp.getTime().get(), tz);
     }
 }
