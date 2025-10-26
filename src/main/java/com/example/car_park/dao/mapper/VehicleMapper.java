@@ -12,7 +12,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Mappings;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,7 +62,7 @@ public interface VehicleMapper {
     @Mappings({
             @Mapping(target = "isAvailable", expression = "java(vehicle.isAvailable() ? \"Да\" : \"Нет\")"),
             @Mapping(target = "brand", source = "vehicle.brand.name"),
-            @Mapping(target = "activeDriver", expression = "java(String.format(\"%s %s\", vehicle.getActiveDriver().getLastName(), vehicle.getActiveDriver().getFirstName()))"),
+            @Mapping(target = "activeDriver", expression = "java(vehicle.getActiveDriver() == null ? null: String.format(\"%s %s\", vehicle.getActiveDriver().getLastName(), vehicle.getActiveDriver().getFirstName()))"),
             @Mapping(target = "drivers", expression = "java(getDriversNames(vehicle.getDrivers()))")
     })
     VehicleInfoViewModel vehicleToVehicleInfoViewModel(Vehicle vehicle);
