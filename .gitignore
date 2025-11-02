@@ -35,3 +35,7 @@ build/
 /test.http
 
 /src/main/resources/application.properties
+
+/.env
+
+db-init
