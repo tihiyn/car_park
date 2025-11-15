@@ -20,5 +20,4 @@ public class TripRestController {
     public ResponseEntity<?> showTripsOnMap(@RequestBody List<Long> tripIds) {
         return tripService.getTripsForMap(tripIds);
     }
-
 }

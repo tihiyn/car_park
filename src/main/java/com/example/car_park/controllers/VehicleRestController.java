@@ -2,6 +2,7 @@ package com.example.car_park.controllers;
 
 import com.example.car_park.controllers.dto.request.VehicleRequestDto;
 import com.example.car_park.controllers.dto.response.TripDto;
+import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 
 import java.net.URI;
 import java.time.ZonedDateTime;
@@ -120,5 +123,10 @@ public class VehicleRestController {
                                                   @RequestParam ZonedDateTime begin,
                                                   @RequestParam ZonedDateTime end) {
         return ResponseEntity.ok(tripService.getTripsForAPI(user, id, begin, end));
+    }
+
+    @GetMapping(value = "/{id}/online", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<VehicleLocationJsonDto> streamVehicleLocation(@PathVariable Long id) {
+        return vehicleService.streamVehicleLocation(id);
     }
 }
