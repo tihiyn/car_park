@@ -1,14 +1,11 @@
 name: Deploy app to server
 on:
-  pull_request:
+  push:
     branches:
-      - master
-    types:
-      - closed
+      - main
 
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
