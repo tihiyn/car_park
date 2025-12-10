@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Отслеживание авто</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        #map { height: 90vh; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <h2 class="text-center my-3">Отслеживание автомобиля</h2>
+    <div id="map"></div>
+</div>
+
+<input type="hidden" id="vehicleId" th:value="${vehicleId}"/>
+
+<script>
+    let map, marker;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const vehicleId = document.getElementById("vehicleId").value;
+
+        map = L.map('map').setView([55.75, 37.61], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        const eventSource = new EventSource(`/api/vehicles/${vehicleId}/online`);
+
+        eventSource.onmessage = (event) => {
+            const pos = JSON.parse(event.data);
+
+            if (!marker) {
+                marker = L.marker([pos.latitude, pos.longitude]).addTo(map);
+            } else {
+                marker.setLatLng([pos.latitude, pos.longitude]);
+            }
+
+            map.panTo([pos.latitude, pos.longitude]);
+        };
+
+        eventSource.onerror = (err) => {
+            console.error("Ошибка SSE", err);
+            eventSource.close();
+        };
+    });
+</script>
+
+</body>
+</html>

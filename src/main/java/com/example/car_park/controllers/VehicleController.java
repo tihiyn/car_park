@@ -91,4 +91,10 @@ public class VehicleController {
         model.addAttribute("vehicles", vehicleService.findByKeyword(keyword));
         return "search_vehicles";
     }
+
+    @GetMapping("/{id}/online-map")
+    public String vehicleMap(@PathVariable Long id, Model model) {
+        model.addAttribute("vehicleId", id);
+        return "online-map";
+    }
 }
