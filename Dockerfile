@@ -1,3 +1,4 @@
+#Build app image
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY ./*.jar app.jar
