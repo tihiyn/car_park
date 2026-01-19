@@ -65,7 +65,7 @@ public interface VehicleMapper {
             @Mapping(target = "activeDriver", expression = "java(vehicle.getActiveDriver() == null ? null: String.format(\"%s %s\", vehicle.getActiveDriver().getLastName(), vehicle.getActiveDriver().getFirstName()))"),
             @Mapping(target = "drivers", expression = "java(getDriversNames(vehicle.getDrivers()))")
     })
-    VehicleInfoViewModel vehicleToVehicleInfoViewModel(Vehicle vehicle);
+    VehicleInfoViewModel toModel(Vehicle vehicle);
 
     default String getDriversNames(List<Driver> drivers) {
         return drivers.stream()

@@ -7,6 +7,7 @@ import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.BrandService;
 import com.example.car_park.service.DriverService;
 import com.example.car_park.service.EnterpriseService;
+import com.example.car_park.service.VehicleProvider;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,22 +27,25 @@ import java.util.List;
 @RequestMapping("/vehicles")
 @RequiredArgsConstructor
 public class VehicleController {
+    private final VehicleProvider vp;
+
     private final VehicleService vehicleService;
-    private final VehicleMapper vehicleMapper;
     private final BrandService brandService;
     private final DriverService driverService;
     private final EnterpriseService enterpriseService;
 
-    @GetMapping({"", "/{id}"})
-    public String getVehicles(@AuthenticationPrincipal User user,
-                              @PathVariable(required = false) Long id,
-                              Model model) {
-        if (id == null) {
-            model.addAttribute("vehicles", vehicleService.findAll());
-            return "vehicles";
-        }
-        Vehicle vehicle = vehicleService.findById(user, id);
-        model.addAttribute("vehicle", vehicleMapper.vehicleToVehicleInfoViewModel(vehicle));
+    @GetMapping("")
+    public String findAll(@AuthenticationPrincipal User user,
+                          Model model) {
+        model.addAttribute("vehicles", vp.findAll(user));
+        return "vehicles";
+    }
+
+    @GetMapping("/{id}")
+    public String findById(@AuthenticationPrincipal User user,
+                           @PathVariable(required = false) Long id,
+                           Model model) {
+        model.addAttribute(vp.findById(user, id));
         return "vehicle_info";
     }
 
@@ -66,7 +70,7 @@ public class VehicleController {
     @GetMapping("/edit/{id}")
     public String editVehicle(@AuthenticationPrincipal User user,
                               @PathVariable Long id, Model model) {
-        Vehicle vehicle = vehicleService.findById(id);
+        Vehicle vehicle = vehicleService.findById(user, id);
         if (vehicle == null) {
             return "redirect:/api/ui/enterprises";
         }

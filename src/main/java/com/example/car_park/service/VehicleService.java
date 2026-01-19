@@ -9,6 +9,7 @@ import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Brand;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.Enterprise;
+import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import org.springframework.context.annotation.Lazy;
@@ -42,7 +43,8 @@ public class VehicleService {
 
     public VehicleService(VehicleRepository vehicleRepository,
                           VehicleMapper vehicleMapper,
-                          ManagerService managerService, BrandService brandService, @Lazy EnterpriseService enterpriseService,
+                          ManagerService managerService, BrandService brandService,
+                          @Lazy EnterpriseService enterpriseService,
                           DriverService driverService) {
         this.vehicleRepository = vehicleRepository;
         this.vehicleMapper = vehicleMapper;
@@ -52,23 +54,22 @@ public class VehicleService {
         this.driverService = driverService;
     }
 
-    public Vehicle findById(Long id) {
-        return vehicleRepository.findById(id).orElse(null);
+    public Vehicle getIfBelongs(Manager m, Long id) {
+        return m.getManagedEnterprises().stream()
+            .flatMap(enterprise -> enterprise.getVehicles().stream())
+            .filter(v -> v.getId().equals(id))
+            .findAny()
+            .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
+                String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id)));
     }
 
-    public Vehicle findById(User user, Long id) {
-        boolean isVehicleExist = vehicleRepository.findById(id).isPresent();
-        if (!isVehicleExist) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    String.format("Транспортное средство с id=%d отсутствует", id));
-        }
-        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
-                .flatMap(enterprise -> enterprise.getVehicles().stream())
-                .filter(v -> v.getId().equals(id))
-                .findAny()
-                .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
-                        String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id)));
+    public List<Vehicle> findAllByManager(Manager m) {
+        return m.getManagedEnterprises()
+            .stream()
+            .flatMap(e -> e.getVehicles().stream())
+            .toList();
     }
+
 
     public List<Vehicle> findAllByIds(User user, Set<Long> vehicleIds) {
         List<Vehicle> allVehicles = vehicleRepository.findAllById(vehicleIds);
@@ -96,10 +97,6 @@ public class VehicleService {
                     String.format("Транспортные средства с id %s не относятся к Вашим предприятиям", unmanagedVehicleIds));
         }
         return managedVehicles;
-    }
-
-    public List<Vehicle> findAll() {
-        return vehicleRepository.findAll();
     }
 
     public VehicleResponseDto findByIdForRest(User user, Long id) {
