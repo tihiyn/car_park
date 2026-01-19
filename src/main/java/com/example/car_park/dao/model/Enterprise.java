@@ -42,10 +42,10 @@ public class Enterprise {
     private ZoneId timeZone;
 
     @OneToMany(mappedBy = "enterprise",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     private List<Vehicle> vehicles = new ArrayList<>();
     @OneToMany(mappedBy = "enterprise",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     private List<Driver> drivers;
     @ManyToMany(mappedBy = "managedEnterprises")
     private List<Manager> managers;
@@ -54,9 +54,9 @@ public class Enterprise {
     private void preventDeleteIfHasVehiclesOrDrivers() {
         if (!vehicles.isEmpty() || !drivers.isEmpty()) {
             throw new ResponseStatusException(CONFLICT,
-                    String.format("Нельзя удалить предприятие: в нём есть транспортные средства %s и/или водители %s!",
-                            vehicles.stream().map(Vehicle::getId).toList(),
-                            drivers.stream().map(Driver::getId).toList())
+                String.format("Нельзя удалить предприятие: в нём есть транспортные средства %s и/или водители %s!",
+                    vehicles.stream().map(Vehicle::getId).toList(),
+                    drivers.stream().map(Driver::getId).toList())
             );
         }
     }

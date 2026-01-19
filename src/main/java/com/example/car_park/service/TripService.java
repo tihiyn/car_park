@@ -1,193 +1,117 @@
 package com.example.car_park.service;
 
-import com.example.car_park.controllers.dto.response.*;
-import com.example.car_park.dao.TripRepository;
-import com.example.car_park.dao.VehicleLocationRepository;
-import com.example.car_park.dao.mapper.TripMapper;
+import com.example.car_park.controllers.dto.VehicleState;
+import com.example.car_park.controllers.dto.response.GeoJsonFeature;
+import com.example.car_park.controllers.dto.response.GeoJsonFeatureCollection;
+import com.example.car_park.controllers.dto.response.GeoJsonGeometry;
+import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
 import com.example.car_park.dao.mapper.VehicleLocationMapper;
 import com.example.car_park.dao.model.Trip;
-import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
-import com.example.car_park.enums.Format;
 import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class TripService {
-    private final VehicleService vehicleService;
-    private final TripRepository tripRepository;
-    private final TripMapper tripMapper;
     private final VehicleLocationMapper vehicleLocationMapper;
-    private final VehicleLocationRepository vehicleLocationRepository;
 
-    public ResponseEntity<?> getTripsByPointsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end, Format format) {
-        Vehicle vehicle = vehicleService.findById(user, id);
-        List<VehicleLocation> locations = getTripsByPoints(vehicle, begin, end);
-        ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
-        if (format == Format.JSON) {
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(locations.stream()
-                            .map(location -> vehicleLocationMapper.vehicleLocationToVehicleLocationJsonDto(location, timeZone))
-                            .toList()
-                    );
-        }
-        return ResponseEntity.ok()
-                .body(vehicleLocationMapper.vehicleLocationsToGeoJsonMap(locations, timeZone));
+    public ZonedDateTime findMinBegin(List<Trip> ts) {
+        return ts.stream()
+            .map(Trip::getBegin)
+            .min(ZonedDateTime::compareTo)
+            .get();
     }
 
-    public List<VehicleLocation> getTripsByPoints(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
-        List<Trip> trips = tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
-                vehicle,
-                begin.withZoneSameInstant(ZoneId.of("UTC")),
-                end.withZoneSameInstant(ZoneId.of("UTC")));
-        if (trips.isEmpty()) {
-            return new ArrayList<>();
-        }
-        ZonedDateTime minBegin = trips.stream()
-                .map(Trip::getBegin)
-                .min(ZonedDateTime::compareTo)
-                .get();
-        ZonedDateTime maxEnd = trips.stream()
-                .map(Trip::getEnd)
-                .max(ZonedDateTime::compareTo)
-                .get();
-        List<VehicleLocation> allLocations = vehicleLocationRepository
-                .findAllByVehicleAndTimestampBetween(vehicle, minBegin, maxEnd);
-        return allLocations.stream()
-                .filter(location -> trips.stream()
-                        .anyMatch(trip ->
-                                !location.getTimestamp().isBefore(trip.getBegin()) &&
-                                        !location.getTimestamp().isAfter(trip.getEnd())
-                        ))
-                .toList();
+    public ZonedDateTime findMaxEnd(List<Trip> ts) {
+        return ts.stream()
+            .map(Trip::getEnd)
+            .max(ZonedDateTime::compareTo)
+            .get();
     }
 
-    public List<TripsViewModel> getTripsForUI(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
-        Vehicle vehicle = vehicleService.findById(user, id);
-        return getTrips(vehicle, begin, end).stream()
-                .map(tripMapper::tripToTripsViewModel)
-                .toList();
-    }
-
-    public List<TripDto> getTripsForAPI(User user, Long id, ZonedDateTime begin, ZonedDateTime end) {
-        Vehicle vehicle = vehicleService.findById(user, id);
-        ZoneId timeZone = vehicle.getEnterprise().getTimeZone();
-        return getTrips(vehicle, begin, end).stream()
-                .map(trip -> tripMapper.tripToTripDto(trip, timeZone))
-                .toList();
-    }
-
-    public List<Trip> getTrips(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end) {
-        return tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(
-                        vehicle,
-                        begin.withZoneSameInstant(ZoneId.of("UTC")),
-                        end.withZoneSameInstant(ZoneId.of("UTC"))
-                );
-    }
-
-    public ResponseEntity<?> getTripsForMap(List<Long> tripIds) {
-        Map<Long, List<VehicleLocation>> tripsMap = new HashMap<>();
-        for (Long tripId : tripIds) {
-            Trip trip = tripRepository.findById(tripId).orElse(null);
-            if (trip != null) {
-                List<VehicleLocation> locations = vehicleLocationRepository
-                        .findAllByVehicleAndTimestampBetween(
-                                trip.getVehicle(),
-                                trip.getBegin(),
-                                trip.getEnd());
-                tripsMap.put(tripId, locations);
-            }
-        }
-        List<GeoJsonFeatureCollection> geoJson = convertToGeoJson(tripsMap);
-        return ResponseEntity.ok(geoJson);
+    public List<VehicleLocation> filterByTripsBounds(List<VehicleLocation> locs, List<Trip> trips) {
+        return locs.stream()
+            .filter(location -> trips.stream()
+                .anyMatch(trip ->
+                    !location.getTimestamp().isBefore(trip.getBegin()) &&
+                        !location.getTimestamp().isAfter(trip.getEnd())
+                ))
+            .toList();
     }
 
     public List<GeoJsonFeatureCollection> convertToGeoJson(Map<Long, List<VehicleLocation>> tripsMap) {
         List<GeoJsonFeatureCollection> result = new ArrayList<>();
-
         for (Map.Entry<Long, List<VehicleLocation>> entry : tripsMap.entrySet()) {
             Long tripId = entry.getKey();
             List<VehicleLocation> locations = entry.getValue();
-
-            // Преобразуем VehicleLocation в массив координат
             List<List<Double>> coordinates = locations.stream()
-                    .map(loc -> List.of(loc.getLocation().getX(), loc.getLocation().getY())) // X=lon, Y=lat
-                    .toList();
-
+                .map(loc -> List.of(loc.getLocation().getX(), loc.getLocation().getY()))
+                .toList();
             GeoJsonFeature feature = new GeoJsonFeature(
-                    "Feature",
-                    Map.of("tripId", tripId),
-                    new GeoJsonGeometry("LineString", coordinates)
+                "Feature",
+                Map.of("tripId", tripId),
+                new GeoJsonGeometry("LineString", coordinates)
             );
-
             GeoJsonFeatureCollection collection = new GeoJsonFeatureCollection("FeatureCollection", List.of(feature));
             result.add(collection);
         }
-
         return result;
     }
 
-    public void saveFromFile(User user, Long vehicleId, MultipartFile file) {
-        GPX gpx;
-        try {
-            Path tempFile = Files.createTempFile("trip-", ".gpx");
-            file.transferTo(tempFile);
-            gpx = GPX.read(tempFile);
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            throw new RuntimeException("Не удалось загрузить файл поездки");
-        }
-        Vehicle vehicle = vehicleService.findById(user, vehicleId);
-        ZoneId tz = vehicle.getEnterprise().getTimeZone();
+    public List<VehicleLocation> getLocationsFomGPX(GPX gpx, Vehicle v, List<Trip> saved) {
+        ZoneId tz = v.getEnterprise().getTimeZone();
         List<VehicleLocation> locations = gpx.getTracks().get(0).getSegments().get(0).getPoints().stream()
-            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, vehicle, tz))
+            .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, v, tz))
             .toList();
         if (locations.isEmpty()) {
             throw new RuntimeException("В файле отсутствуют поездки");
         }
         VehicleLocation begin = locations.getFirst();
         VehicleLocation end = locations.getLast();
-        if (!checkTripNotIntersectsWithOthers(vehicle, begin, end)) {
+        if (!checkTripNotIntersectsWithOthers(saved, begin, end)) {
             throw new RuntimeException("Поездка пересекается с существующими");
         }
-        saveNewTrip(vehicle, locations, begin, end);
+        return locations;
     }
 
-    private boolean checkTripNotIntersectsWithOthers(Vehicle vehicle,
+    private boolean checkTripNotIntersectsWithOthers(List<Trip> saved,
                                                   VehicleLocation begin,
                                                   VehicleLocation end) {
-        List<Trip> trips = tripRepository.findAllByVehicle(vehicle);
-        return trips.stream()
+        return saved.stream()
             .noneMatch(t -> t.getBegin().isBefore(begin.getTimestamp()) && t.getEnd().isAfter(begin.getTimestamp())
                 || t.getBegin().isBefore(end.getTimestamp()) && t.getEnd().isAfter(end.getTimestamp()));
     }
 
-    private void saveNewTrip(Vehicle vehicle, List<VehicleLocation> locations,
-                             VehicleLocation begin, VehicleLocation end) {
-        Trip newTrip = new Trip()
-            .setBegin(begin.getTimestamp())
-            .setBeginLocation(begin)
-            .setEnd(end.getTimestamp())
-            .setEndLocation(end)
-            .setVehicle(vehicle);
-        vehicleLocationRepository.saveAll(locations);
-        tripRepository.save(newTrip);
+    public VehicleLocationJsonDto getNewPoint(VehicleState s) {
+        if (s.getBearing() < 0) s.setBearing(s.getBearing() + 360);
+        if (s.getBearing() >= 360) s.setBearing(s.getBearing()- 360);
+        double distance = s.getSpeed() / 3.6;
+        double R = 6371000;
+        double latRad = Math.toRadians(s.getLat());
+        double lonRad = Math.toRadians(s.getLon());
+        double bearingRad = Math.toRadians(s.getBearing());
+        double newLat = Math.asin(
+            Math.sin(latRad) * Math.cos(distance / R) +
+                Math.cos(latRad) * Math.sin(distance / R) * Math.cos(bearingRad)
+        );
+        double newLon = lonRad + Math.atan2(
+            Math.sin(bearingRad) * Math.sin(distance / R) * Math.cos(latRad),
+            Math.cos(distance / R) - Math.sin(latRad) * Math.sin(newLat)
+        );
+        s.setLat(Math.toDegrees(newLat));
+        s.setLon(Math.toDegrees(newLon));
+        return new VehicleLocationJsonDto()
+            .setLatitude(s.getLat())
+            .setLongitude(s.getLon())
+            .setTimestamp(ZonedDateTime.now());
     }
 }

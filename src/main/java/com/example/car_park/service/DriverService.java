@@ -1,11 +1,14 @@
 package com.example.car_park.service;
 
 import com.example.car_park.controllers.dto.response.DriverDto;
+import com.example.car_park.controllers.providers.ManagerProvider;
 import com.example.car_park.dao.DriverRepository;
 import com.example.car_park.dao.mapper.DriverMapper;
 import com.example.car_park.dao.model.Driver;
 import com.example.car_park.dao.model.Enterprise;
+import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.User;
+import com.example.car_park.dao.model.Vehicle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,9 +24,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 @RequiredArgsConstructor
 public class DriverService {
-    private final DriverMapper driverMapper;
     private final DriverRepository driverRepository;
-    private final ManagerService managerService;
+    private final ManagerProvider managerProvider;
 
     public List<Driver> findAllByIds(User user, Set<Long> driverIds) {
         List<Driver> allDrivers = driverRepository.findAllById(driverIds);
@@ -37,7 +39,7 @@ public class DriverService {
             throw new ResponseStatusException(NOT_FOUND,
                     String.format("Водители с id %s отсутствуют", missingDriverIds));
         }
-        List<Driver> managedDrivers = managerService.getManagerByUser(user)
+        List<Driver> managedDrivers = managerProvider.getManagerByUser(user)
                 .getManagedEnterprises().stream()
                 .flatMap(enterprise -> enterprise.getDrivers().stream())
                 .filter(driver -> driverIds.contains(driver.getId()))
@@ -53,42 +55,51 @@ public class DriverService {
         return managedDrivers;
     }
 
-    // TODO реализовать метод
-    public Driver findByIdForRest(User user, Long id) {
-        return null;
+    public void checkAllExists(List<Driver> all, Set<Long> toFindIds) {
+        if (all.size() == toFindIds.size()) {
+            return;
+        }
+        Set<Long> allIds = all.stream()
+            .map(Driver::getId)
+            .collect(Collectors.toSet());
+        Set<Long> missingIds = toFindIds.stream()
+            .filter(id -> !allIds.contains(id))
+            .collect(Collectors.toSet());
+        throw new ResponseStatusException(NOT_FOUND,
+            String.format("Водители с id %s отсутствуют", missingIds));
     }
 
-    public List<DriverDto> findAllForRest(User user, Pageable pageable) {
-        return driverRepository.findAllByEnterpriseIn(managerService.getManagerByUser(user).getManagedEnterprises(), pageable)
-                .stream()
-                .map(driverMapper::driverToDriverDto)
-                .toList();
-        // TODO удалить устаревший вариант
-//        return managerService.getManagerByUser(user).getManagedEnterprises().stream()
-//                .flatMap(enterprise -> enterprise.getDrivers().stream().map(driverMapper::driverToDriverDto))
-//                .toList();
+    public void checkAllBelongs(List<Driver> managed, Set<Long> toFindIds) {
+        if (managed.size() == toFindIds.size()) {
+            return;
+        }
+        Set<Long> unmanagedIds = toFindIds.stream()
+            .filter(id -> managed.stream()
+                .noneMatch(d -> d.getId().equals(id)))
+            .collect(Collectors.toSet());
+        throw new ResponseStatusException(FORBIDDEN,
+            String.format("Водители с id %s не относятся к Вашим предприятиям", unmanagedIds));
     }
 
-    // TODO добавить нормальную обработку ошибок
-    public List<Driver> findAll(User user, Long enterpriseId) {
-        Enterprise enterprise = managerService.getManagerByUser(user)
-                .getManagedEnterprises().stream()
-                .filter(e -> e.getId().equals(enterpriseId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
-                        String.format("Предприятие с id=%d отсутствует", enterpriseId)));
-        return enterprise.getDrivers();
-    }
-
-    public List<Driver> findActiveDriverPretendents(User user, Long enterpriseId) {
-        Enterprise enterprise = managerService.getManagerByUser(user)
-                .getManagedEnterprises().stream()
-                .filter(e -> e.getId().equals(enterpriseId))
-                .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND,
-                        String.format("Предприятие с id=%d отсутствует", enterpriseId)));
-        return enterprise.getDrivers().stream()
+    public List<Driver> findAllWithoutActiveVehicle(List<Driver> ds) {
+        return ds.stream()
                 .filter(driver -> driver.getActiveVehicle() == null)
                 .toList();
+    }
+
+    public Driver findByIdIn(List<Driver> drivers, Long id) {
+        return drivers.stream()
+            .filter(d -> d.getId().equals(id))
+            .findAny()
+            .orElse(null);
+    }
+
+    public Driver getIfBelongs(Manager m, Long id) {
+        return m.getManagedEnterprises().stream()
+            .flatMap(e -> e.getDrivers().stream())
+            .filter(d -> d.getId().equals(id))
+            .findAny()
+            .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
+                String.format("Водитель с id=%d не относится к Вашим предприятиям", id)));
     }
 }

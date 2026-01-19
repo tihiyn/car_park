@@ -72,7 +72,7 @@
         <div class="col-md-6">
             <!-- Кнопки "Редактировать" и "К списку предприятий" -->
             <div class="mb-3 d-flex gap-2">
-                <a th:href="@{/api/ui/vehicles/edit/{id}(id=${vehicle.id})}" class="btn btn-primary">Редактировать</a>
+                <a th:href="@{edit/{id}(id=${vehicle.id})}" class="btn btn-primary">Редактировать</a>
                 <a href="/api/ui/enterprises" class="btn btn-secondary">К списку предприятий</a>
             </div>
         </div>
@@ -101,7 +101,7 @@
     <section class="mt-5">
         <h2 class="text-center mb-4">Загрузить поездку</h2>
         <form
-                th:action="@{/trips/save(id=${vehicle.id})}"
+                th:action="@{/api/trips/save(id=${vehicle.id})}"
                 method="post"
                 enctype="multipart/form-data"
                 id="uploadTripForm">
@@ -146,7 +146,7 @@
         const from = toUTCString(document.getElementById('fromDate').value);
         const to = toUTCString(document.getElementById('toDate').value);
 
-        fetch(`/trips?id=${vehicleId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+        fetch(`/trips?vId=${vehicleId}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
             .then(res => res.text())
             .then(html => {
                 document.getElementById('trips').innerHTML = html;

@@ -1,4 +1,4 @@
-package com.example.car_park.service;
+package com.example.car_park.controllers.providers;
 
 import com.example.car_park.dao.UserRepository;
 import com.example.car_park.dao.model.Manager;
@@ -9,11 +9,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class ManagerService {
+public class ManagerProvider {
     private final UserRepository userRepository;
 
     public Manager getManagerByUser(User user) {
-        // TODO: подумать над исключением
         return userRepository.findByUsername(user.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден")).getManager();
     }

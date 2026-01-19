@@ -62,13 +62,13 @@
                         <option th:each="zone : ${timeZones}"
                                 th:value="${zone}"
                                 th:text="${zone}"
-                                th:selected="${zone == enterprise.timeZone.id}">
+                                th:selected="${zone == enterprise.timeZone}">
                         </option>
                     </select>
                 </form>
             </td>
             <td>
-                <span th:each="driver : ${enterprise.drivers}" th:text="${driver.lastName + ' ' + driver.firstName}" class="badge bg-primary me-1"></span>
+                <span th:each="driver : ${enterprise.drivers}" th:text="${driver.name}" class="badge bg-primary me-1"></span>
             </td>
             <td>
                 <span th:each="vehicle : ${enterprise.vehicles}" class="badge bg-success me-1 vehicle-badge">

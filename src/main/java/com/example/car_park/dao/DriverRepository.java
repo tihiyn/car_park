@@ -10,4 +10,6 @@ import java.util.List;
 
 public interface DriverRepository extends JpaRepository<Driver, Long> {
     Page<Driver> findAllByEnterpriseIn(List<Enterprise> enterprises, Pageable pageable);
+
+    List<Driver> findAllByEnterpriseId(Long eId);
 }

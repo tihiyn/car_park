@@ -1,15 +1,15 @@
 package com.example.car_park.service;
 
-import com.example.car_park.dao.TripRepository;
 import com.example.car_park.dao.model.AverageSalaryReport;
 import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.ProductionYearReport;
 import com.example.car_park.dao.model.Trip;
-import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleMileageReport;
 import com.example.car_park.enums.Period;
-import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
@@ -22,28 +22,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ReportService {
-    private final VehicleService vehicleService;
-    private final EnterpriseService enterpriseService;
-    private final TripRepository tripRepository;
-
-    public VehicleMileageReport generateVehicleMileageReport(User user, Long vehicleId, Period period, ZonedDateTime begin, ZonedDateTime end) {
-        Vehicle vehicle = vehicleService.findById(user, vehicleId);
-        List<Trip> trips = tripRepository.findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(vehicle, begin, end);
-        VehicleMileageReport report = new VehicleMileageReport();
-        report.setName(String.format("Пробег автомобиля %s %s", vehicle.getRegNum(), period.getName()));
-        report.setVehicleId(vehicleId);
-        report.setPeriod(period);
-        report.setBegin(begin);
-        report.setEnd(end);
-        report.setResult(trips.stream()
-                .collect(Collectors.toMap(
-                        trip -> getPeriod(trip.getBeginLocation().getTimestamp(), period),
-                        Trip::getLength,
-                        Long::sum)
-                ));
-        return report;
+    public VehicleMileageReport buildVehicleMileageReport(Vehicle v, List<Trip> ts, Period p, ZonedDateTime s, ZonedDateTime b) {
+        VehicleMileageReport r = new VehicleMileageReport();
+        r.setName("Пробег автомобиля %s %s".formatted(v.getRegNum(), p.getName()));
+        r.setVehicleId(v.getId());
+        r.setPeriod(p);
+        r.setBegin(s);
+        r.setEnd(b);
+        r.setResult(ts.stream()
+            .collect(Collectors.toMap(
+                trip -> getPeriod(trip.getBeginLocation().getTimestamp(), p),
+                Trip::getLength,
+                Long::sum)
+            )
+        );
+        return r;
     }
 
     private String getPeriod(ZonedDateTime dt, Period period) {
@@ -54,48 +48,109 @@ public class ReportService {
         };
     }
 
-    public ProductionYearReport generateProductionYearReport(User user, Long enterpriseId, Integer begin, Integer end) {
-        Enterprise enterprise = enterpriseService.findById(user, enterpriseId);
-        Map<Integer, Long> result = enterprise.getVehicles().stream()
-                .map(Vehicle::getProductionYear)
-                .filter(year -> year >= begin && year <= end)
-                .collect(Collectors.groupingBy(
-                        num -> num,
-                        Collectors.counting()
-                )).entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (a, b) -> a,
-                        LinkedHashMap::new
-                ));
-        ProductionYearReport report = new ProductionYearReport();
-        report.setEnterpriseId(enterpriseId);
-        report.setName(String.format("Статистика количества автомобилей по годам производства в предприятии \"%s\"", enterprise.getName()));
-        report.setBeginYear(begin);
-        report.setEndYear(end);
-        report.setResult(result);
-        return report;
+    public ProductionYearReport buildProductionYearReport(Enterprise e, Integer sYear, Integer bYear) {
+        Map<Integer, Long> res = e.getVehicles().stream()
+            .map(Vehicle::getProductionYear)
+            .filter(year -> year >= sYear && year <= bYear)
+            .collect(Collectors.groupingBy(
+                num -> num,
+                Collectors.counting()
+            )).entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (a, b) -> a,
+                LinkedHashMap::new
+            ));
+        ProductionYearReport r = new ProductionYearReport();
+        r.setEnterpriseId(e.getId());
+        r.setName("Статистика количества автомобилей по годам производства в предприятии \"%s\"".formatted(e.getName()));
+        r.setBeginYear(sYear);
+        r.setEndYear(bYear);
+        r.setResult(res);
+        return r;
     }
 
-    public AverageSalaryReport generateAverageSalaryReport(User user, Long enterpriseId) {
-        Enterprise enterprise = enterpriseService.findById(user, enterpriseId);
-        Integer avgSalary = (int) enterprise.getDrivers().stream()
-                .mapToDouble(driver -> driver.getSalary().doubleValue())
-                .average().orElse(0.0);
+    public AverageSalaryReport buildAverageSalaryReport(Enterprise e) {
+        Integer avgSalary = (int) e.getDrivers().stream()
+            .mapToDouble(driver -> driver.getSalary().doubleValue())
+            .average().orElse(0.0);
         AverageSalaryReport report = new AverageSalaryReport();
-        report.setEnterpriseId(enterpriseId);
-        report.setName(String.format("Средняя зарплата водителей в предприятии \"%s\"", enterprise.getName()));
-        report.setResult(Map.of(enterprise.getName(), avgSalary));
+        report.setEnterpriseId(e.getId());
+        report.setName("Средняя зарплата водителей в предприятии \"%s\"".formatted(e.getName()));
+        report.setResult(Map.of(e.getName(), avgSalary));
         return report;
     }
 
-    private String origin;
+    public Workbook fillVehicleMileageReportFile(VehicleMileageReport r, Workbook wb) {
+        Sheet sheet = wb.createSheet("Отчёт");
+        int rowIdx = 0;
+        Row headerRow = sheet.createRow(rowIdx++);
+        headerRow.createCell(0).setCellValue(r.getName());
+        Row row1 = sheet.createRow(rowIdx++);
+        row1.createCell(0).setCellValue("Период:");
+        row1.createCell(1).setCellValue(r.getPeriod().getName());
+        Row row2 = sheet.createRow(rowIdx++);
+        row2.createCell(0).setCellValue("Начало:");
+        row2.createCell(1).setCellValue(r.getBegin().toString());
+        Row row3 = sheet.createRow(rowIdx++);
+        row3.createCell(0).setCellValue("Конец:");
+        row3.createCell(1).setCellValue(r.getEnd().toString());
+        rowIdx++;
+        Row tableHeader = sheet.createRow(rowIdx++);
+        tableHeader.createCell(0).setCellValue("Период");
+        tableHeader.createCell(1).setCellValue("Пробег");
+        for (var entry : r.getResult().entrySet()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(entry.getKey());
+            row.createCell(1).setCellValue(entry.getValue().toString());
+        }
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+        return wb;
+    }
 
-    public List<Boolean> customMap(List<String> strings) {
-        return strings.stream()
-                .map(s -> origin.contains(s))
-                .toList();
+    public Workbook fillProductionYearReportFile(ProductionYearReport r, Workbook wb) {
+        Sheet sheet = wb.createSheet("Отчёт");
+        int rowIdx = 0;
+        Row headerRow = sheet.createRow(rowIdx++);
+        headerRow.createCell(0).setCellValue(r.getName());
+        Row row2 = sheet.createRow(rowIdx++);
+        row2.createCell(0).setCellValue("Начало:");
+        row2.createCell(1).setCellValue(r.getBeginYear());
+        Row row3 = sheet.createRow(rowIdx++);
+        row3.createCell(0).setCellValue("Конец:");
+        row3.createCell(1).setCellValue(r.getEndYear());
+        rowIdx++;
+        Row tableHeader = sheet.createRow(rowIdx++);
+        tableHeader.createCell(0).setCellValue("Год");
+        tableHeader.createCell(1).setCellValue("Количество автомобилей");
+        for (var entry : r.getResult().entrySet()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(entry.getKey());
+            row.createCell(1).setCellValue(entry.getValue());
+        }
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+        return wb;
+    }
+
+    public Workbook fillAverageSalaryReportFile(AverageSalaryReport r, Workbook wb) {
+        Sheet sheet = wb.createSheet("Отчёт");
+        int rowIdx = 0;
+        Row headerRow = sheet.createRow(rowIdx++);
+        headerRow.createCell(0).setCellValue(r.getName());
+        Row tableHeader = sheet.createRow(rowIdx++);
+        tableHeader.createCell(0).setCellValue("Предприятие");
+        tableHeader.createCell(1).setCellValue("Средняя зарплата");
+        for (var entry : r.getResult().entrySet()) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(entry.getKey());
+            row.createCell(1).setCellValue(entry.getValue());
+        }
+        sheet.autoSizeColumn(0);
+        sheet.autoSizeColumn(1);
+        return wb;
     }
 }

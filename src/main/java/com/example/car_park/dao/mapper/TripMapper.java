@@ -13,38 +13,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.ZoneId;
 
-@Mapper(
-        componentModel = "spring",
-        uses = {AddressClient.class}
-)
-public abstract class TripMapper {
-    @Autowired
-    protected AddressClient addressClient;
+@Mapper(componentModel = "spring")
+public interface TripMapper {
+    @Mapping(target = "beginInfo.beginLat", expression = "java(trip.getBeginLocation().getLocation().getY())")
+    @Mapping(target = "beginInfo.beginLong", expression = "java(trip.getBeginLocation().getLocation().getX())")
+    @Mapping(target = "beginInfo.beginTS", expression = "java(trip.getBegin().withZoneSameInstant(timeZone))")
+    @Mapping(target = "endInfo.endLat", expression = "java(trip.getEndLocation().getLocation().getY())")
+    @Mapping(target = "endInfo.endLong", expression = "java(trip.getEndLocation().getLocation().getX())")
+    @Mapping(target = "endInfo.endTS", expression = "java(trip.getEnd().withZoneSameInstant(timeZone))")
+    TripDto tripToTripDto(Trip trip, String beginAddress, String endAddress, @Context ZoneId timeZone);
 
-    @Mappings({
-            @Mapping(target = "beginInfo.beginAddress", expression = "java(getAddress(trip.getBeginLocation()))"),
-            @Mapping(target = "beginInfo.beginLat", expression = "java(trip.getBeginLocation().getLocation().getY())"),
-            @Mapping(target = "beginInfo.beginLong", expression = "java(trip.getBeginLocation().getLocation().getX())"),
-            @Mapping(target = "beginInfo.beginTS", expression = "java(trip.getBegin().withZoneSameInstant(timeZone))"),
-            @Mapping(target = "endInfo.endAddress", expression = "java(getAddress(trip.getEndLocation()))"),
-            @Mapping(target = "endInfo.endLat", expression = "java(trip.getEndLocation().getLocation().getY())"),
-            @Mapping(target = "endInfo.endLong", expression = "java(trip.getEndLocation().getLocation().getX())"),
-            @Mapping(target = "endInfo.endTS", expression = "java(trip.getEnd().withZoneSameInstant(timeZone))")
-    })
-    public abstract TripDto tripToTripDto(Trip trip, @Context ZoneId timeZone);
-
-    @Mappings({
-            @Mapping(target = "beginAddress", expression = "java(getAddress(trip.getBeginLocation()))"),
-            @Mapping(target = "beginTS", expression = "java(trip.getBegin())"),
-            @Mapping(target = "endAddress", expression = "java(getAddress(trip.getEndLocation()))"),
-            @Mapping(target = "endTS", expression = "java(trip.getEnd())")
-    })
-    public abstract TripsViewModel tripToTripsViewModel(Trip trip);
-
-    protected String getAddress(VehicleLocation location) {
-        return addressClient.getAddressByCoords(
-                location.getLocation().getX(),
-                location.getLocation().getY()
-        );
-    }
+    @Mapping(target = "beginTS", expression = "java(trip.getBegin())")
+    @Mapping(target = "endTS", expression = "java(trip.getEnd())")
+    TripsViewModel tripToTripsViewModel(Trip trip, String beginAddress, String endAddress);
 }

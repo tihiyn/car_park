@@ -10,10 +10,10 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
-    List<Trip> findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(Vehicle vehicle, ZonedDateTime begin, ZonedDateTime end);
-    Page<Trip> findAllByVehicle_Enterprise_IdAndBeginGreaterThanEqualAndEndLessThanEqual(Long enterpriseId,
-                                                                                         ZonedDateTime begin,
-                                                                                         ZonedDateTime end,
-                                                                                         Pageable pageable);
-    List<Trip> findAllByVehicle(Vehicle vehicle);
+    List<Trip> findAllByVehicleAndBeginGreaterThanEqualAndEndLessThanEqual(Vehicle v, ZonedDateTime b, ZonedDateTime e);
+    Page<Trip> findAllByVehicle_Enterprise_IdAndBeginGreaterThanEqualAndEndLessThanEqual(Long eId,
+                                                                                         ZonedDateTime b,
+                                                                                         ZonedDateTime e,
+                                                                                         Pageable p);
+    List<Trip> findAllByVehicle(Vehicle v);
 }
