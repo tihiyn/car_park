@@ -48,7 +48,6 @@
                 <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"></option>
             </select>
         </div>
-        <input type="hidden" th:value="${enterprise.id}" name="enterprise" />
         <div class="col-md-6">
             <label for="drivers" class="form-label">Список водителей</label>
             <select th:field="*{drivers}" class="selectpicker form-control" id="drivers" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="Не выбрано" data-select-all-text="Выбрать всё" data-deselect-all-text="Снять всё">

@@ -34,7 +34,7 @@
             maxZoom: 19
         }).addTo(map);
 
-        const eventSource = new EventSource(`/api/vehicles/${vehicleId}/online`);
+        const eventSource = new EventSource(`/api/trips/${vehicleId}/online`);
 
         eventSource.onmessage = (event) => {
             const pos = JSON.parse(event.data);

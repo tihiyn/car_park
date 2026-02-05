@@ -14,7 +14,7 @@
 <body>
 <div class="container mt-5">
     <h1 class="mb-4">Редактировать транспортное средство</h1>
-    <form th:action="@{/vehicles/save}" th:object="${vehicle}" method="post" id='vehicleForm' class="row g-3">
+    <form th:action="@{/vehicles/update}" th:object="${vehicle}" method="post" id='vehicleForm' class="row g-3">
         <input type="hidden" th:value="${vehicle.id}" name="id" />
         <div class="col-md-6">
             <label for="regNum" class="form-label">Регистрационный номер</label>
