@@ -4,9 +4,12 @@ import com.example.car_park.controllers.dto.VehicleState;
 import com.example.car_park.controllers.dto.response.GeoJsonFeature;
 import com.example.car_park.controllers.dto.response.GeoJsonFeatureCollection;
 import com.example.car_park.controllers.dto.response.GeoJsonGeometry;
+import com.example.car_park.controllers.dto.response.Notification;
 import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
 import com.example.car_park.dao.mapper.VehicleLocationMapper;
+import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.Trip;
+import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import io.jenetics.jpx.GPX;
@@ -18,6 +21,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -113,5 +118,18 @@ public class TripService {
             .setLatitude(s.getLat())
             .setLongitude(s.getLon())
             .setTimestamp(ZonedDateTime.now());
+    }
+
+    public Notification buildNotification(Vehicle v, String start, String finish) {
+        Set<String> ms = v.getEnterprise().getManagers().stream()
+            .map(Manager::getUser)
+            .map(User::getUsername)
+            .collect(Collectors.toSet());
+        return new Notification()
+            .setStart(start)
+            .setFinish(finish)
+            .setEnterprise(v.getEnterprise().getName())
+            .setRegNum(v.getRegNum())
+            .setManagers(ms);
     }
 }
