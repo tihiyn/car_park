@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -73,6 +74,15 @@ public class VehicleProvider {
         r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
             String.format("Транспортное средство с id=%d отсутствует", id)));
         return s.getIfBelongs(mp.getManagerByUser(u), id);
+    }
+
+    public Vehicle findByRegNum(User u, String regNum) {
+        Optional<Vehicle> ov = r.findByRegNum(regNum);
+        if (ov.isPresent()) {
+            return s.getIfBelongs(mp.getManagerByUser(u), ov.get().getId());
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+            String.format("Транспортное средство с номером=%s отсутствует", regNum));
     }
 
     public VehicleEditDto edit(User u, Long id) {

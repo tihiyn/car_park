@@ -32,13 +32,19 @@ public class ReportProvider {
         return vp.findAllForUI(u);
     }
 
-    // TODO: избавиться от передачи null в качестве аргумента
+    // FIXME: избавиться от передачи null в качестве аргумента
     public List<EnterpriseViewModel> findAllAvailEnterprises(User u) {
         return ep.findAllForUI(u, null);
     }
 
     public VehicleMileageReport buildVehicleMileageReport(User u, Long vId, Period p, ZonedDateTime s, ZonedDateTime b) {
         Vehicle v = vp.findById(u, vId);
+        List<Trip> ts = tp.findInInterval(v, s, b);
+        return rs.buildVehicleMileageReport(v, ts, p, s, b);
+    }
+
+    public VehicleMileageReport buildVehicleMileageReport(User u, String regNum, Period p, ZonedDateTime s, ZonedDateTime b) {
+        Vehicle v = vp.findByRegNum(u, regNum);
         List<Trip> ts = tp.findInInterval(v, s, b);
         return rs.buildVehicleMileageReport(v, ts, p, s, b);
     }

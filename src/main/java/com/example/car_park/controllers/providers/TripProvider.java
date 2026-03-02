@@ -15,6 +15,7 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import com.example.car_park.enums.Format;
+import com.example.car_park.service.NotificationService;
 import com.example.car_park.service.TripService;
 import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @RequiredArgsConstructor
 public class TripProvider {
     private final TripService ts;
+    private final NotificationService ns;
     private final TripRepository r;
     private final TripMapper m;
     private final VehicleProvider vp;
@@ -102,7 +104,10 @@ public class TripProvider {
         GPX gpx = getGPX(f);
         Vehicle v = vp.findById(u, vId);
         List<VehicleLocation> locs = ts.getLocationsFomGPX(gpx, v, r.findAllByVehicle(v));
-        saveNewTrip(v, locs);
+        Trip t = saveNewTrip(v, locs);
+        String start = ac.getAddressByCoords(t.getBeginLocation().getLocation().getX(), t.getBeginLocation().getLocation().getY());
+        String finish = ac.getAddressByCoords(t.getEndLocation().getLocation().getX(), t.getEndLocation().getLocation().getY());
+        ns.sendNotification(ts.buildNotification(v, start, finish)).subscribe();
     }
 
     private GPX getGPX(MultipartFile f) {
@@ -117,7 +122,7 @@ public class TripProvider {
         }
     }
 
-    private void saveNewTrip(Vehicle v, List<VehicleLocation> locs) {
+    private Trip saveNewTrip(Vehicle v, List<VehicleLocation> locs) {
         VehicleLocation b = locs.getFirst();
         VehicleLocation e = locs.getLast();
         Trip newTrip = new Trip()
@@ -127,13 +132,13 @@ public class TripProvider {
             .setEndLocation(e)
             .setVehicle(v);
         vlr.saveAll(locs);
-        r.save(newTrip);
+        return r.save(newTrip);
     }
 
     public List<GeoJsonFeatureCollection> findTripsForMap(List<Long> tIds) {
         Map<Long, List<VehicleLocation>> tMap = new HashMap<>();
         for (Long tId : tIds) {
-            // TODO: обращение к БД в цикле
+            // FIXME: обращение к БД в цикле
             Trip t = r.findById(tId).orElse(null);
             if (t != null) {
                 List<VehicleLocation> locs = vlr
