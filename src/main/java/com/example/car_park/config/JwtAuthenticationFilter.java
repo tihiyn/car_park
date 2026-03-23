@@ -32,6 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
+        System.out.printf("JwtAuthenticationFilter - %d%n", System.currentTimeMillis());
         String jwt = getJwtFromCookies(request.getCookies());
         if (jwt == null) {
             filterChain.doFilter(request, response);

@@ -1,16 +1,8 @@
 package com.example.car_park.service;
 
-import com.example.car_park.controllers.dto.response.DriverDto;
-import com.example.car_park.controllers.providers.ManagerProvider;
-import com.example.car_park.dao.DriverRepository;
-import com.example.car_park.dao.mapper.DriverMapper;
 import com.example.car_park.dao.model.Driver;
-import com.example.car_park.dao.model.Enterprise;
 import com.example.car_park.dao.model.Manager;
-import com.example.car_park.dao.model.User;
-import com.example.car_park.dao.model.Vehicle;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -24,37 +16,6 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 @RequiredArgsConstructor
 public class DriverService {
-    private final DriverRepository driverRepository;
-    private final ManagerProvider managerProvider;
-
-    public List<Driver> findAllByIds(User user, Set<Long> driverIds) {
-        List<Driver> allDrivers = driverRepository.findAllById(driverIds);
-        if (allDrivers.size() != driverIds.size()) {
-            Set<Long> foundedDriverIds = allDrivers.stream()
-                    .map(Driver::getId)
-                    .collect(Collectors.toSet());
-            Set<Long> missingDriverIds = driverIds.stream()
-                    .filter(id -> !foundedDriverIds.contains(id))
-                    .collect(Collectors.toSet());
-            throw new ResponseStatusException(NOT_FOUND,
-                    String.format("Водители с id %s отсутствуют", missingDriverIds));
-        }
-        List<Driver> managedDrivers = managerProvider.getManagerByUser(user)
-                .getManagedEnterprises().stream()
-                .flatMap(enterprise -> enterprise.getDrivers().stream())
-                .filter(driver -> driverIds.contains(driver.getId()))
-                .toList();
-        if (managedDrivers.size() != driverIds.size()) {
-            Set<Long> unmanagedDriverIds = driverIds.stream()
-                    .filter(id -> managedDrivers.stream()
-                            .noneMatch(d -> d.getId().equals(id)))
-                    .collect(Collectors.toSet());
-            throw new ResponseStatusException(FORBIDDEN,
-                    String.format("Водители с id %s не относятся к Вашим предприятиям", unmanagedDriverIds));
-        }
-        return managedDrivers;
-    }
-
     public void checkAllExists(List<Driver> all, Set<Long> toFindIds) {
         if (all.size() == toFindIds.size()) {
             return;

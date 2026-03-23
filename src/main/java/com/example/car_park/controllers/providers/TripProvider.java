@@ -7,6 +7,7 @@ import com.example.car_park.controllers.dto.response.TripDto;
 import com.example.car_park.controllers.dto.response.TripsViewModel;
 import com.example.car_park.controllers.dto.response.VehicleLocationJsonDto;
 import com.example.car_park.dao.TripRepository;
+import com.example.car_park.dao.VehicleLocationCachedRepository;
 import com.example.car_park.dao.VehicleLocationRepository;
 import com.example.car_park.dao.mapper.TripMapper;
 import com.example.car_park.dao.mapper.VehicleLocationMapper;
@@ -45,6 +46,7 @@ public class TripProvider {
     private final VehicleProvider vp;
     private final AddressClient ac;
     private final VehicleLocationRepository vlr;
+    private final VehicleLocationCachedRepository vlcr;
     private final VehicleLocationMapper vlm;
 
     public List<Trip> findInInterval(Vehicle v, ZonedDateTime s, ZonedDateTime b) {
@@ -57,7 +59,9 @@ public class TripProvider {
 
     public List<TripsViewModel> findInIntervalForUI(User u, Long vId, ZonedDateTime s, ZonedDateTime b) {
         Vehicle v = vp.findById(u, vId);
-        return findInInterval(v, s, b).stream()
+        List<Trip> trips = findInInterval(v, s, b);
+        System.out.printf("TripProvider - %d%n", System.currentTimeMillis());
+        return trips.stream()
             .map(t -> m.tripToTripsViewModel(
                 t,
                 ac.getAddressByCoords(t.getBeginLocation().getLocation().getX(), t.getBeginLocation().getLocation().getY()),
@@ -90,7 +94,7 @@ public class TripProvider {
         }
         ZonedDateTime minBegin = ts.findMinBegin(trips);
         ZonedDateTime maxEnd = ts.findMaxEnd(trips);
-        List<VehicleLocation> locs = vlr.findAllByVehicleAndTimestampBetween(v, minBegin, maxEnd);
+        List<VehicleLocation> locs = vlcr.findAllBetween(v, minBegin, maxEnd);
         List<VehicleLocation> filtered = ts.filterByTripsBounds(locs, trips);
         if (Format.JSON == f) {
             return filtered.stream()
@@ -136,19 +140,22 @@ public class TripProvider {
     }
 
     public List<GeoJsonFeatureCollection> findTripsForMap(List<Long> tIds) {
+        System.out.printf("findTripsForMap - %d%n", System.currentTimeMillis());
         Map<Long, List<VehicleLocation>> tMap = new HashMap<>();
         for (Long tId : tIds) {
             // FIXME: обращение к БД в цикле
             Trip t = r.findById(tId).orElse(null);
             if (t != null) {
-                List<VehicleLocation> locs = vlr
-                    .findAllByVehicleAndTimestampBetween(
+                List<VehicleLocation> locs = vlcr
+                    .findAllBetween(
                         t.getVehicle(),
                         t.getBegin(),
-                        t.getEnd());
+                        t.getEnd()
+                    );
                 tMap.put(tId, locs);
             }
         }
+        System.out.printf("findTripsForMap - %d%n", System.currentTimeMillis());
         return ts.convertToGeoJson(tMap);
     }
 

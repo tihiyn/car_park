@@ -57,18 +57,17 @@
                 <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"></option>
             </select>
         </div>
-        <input type="hidden" th:value="${enterprise.id}" name="enterprise" />
         <div class="col-md-6">
             <label for="drivers" class="form-label">Список водителей</label>
             <select th:field="*{drivers}" class="selectpicker form-control" id="drivers" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="Не выбрано" data-select-all-text="Выбрать всё" data-deselect-all-text="Снять всё">
-                <option th:each="driver : ${drivers}" th:value="${driver.id}" th:text="${driver.lastName + ' ' + driver.firstName}"></option>
+                <option th:each="driver : ${drivers}" th:value="${driver.id}" th:text="${driver.name}"></option>
             </select>
         </div>
         <div class="col-md-6">
             <label for="activeDriver" class="form-label">Активный водитель</label>
             <select th:field="*{activeDriver}" class="form-select" id="activeDriver">
                 <option value="">Выберите водителя</option>
-                <option th:each="driver : ${activeDriverPretendents}" th:value="${driver.id}" th:text="${driver.lastName + ' ' + driver.firstName}"></option>
+                <option th:each="driver : ${activeDriverPretendents}" th:value="${driver.id}" th:text="${driver.name}"></option>
             </select>
         </div>
         <div class="col-12">

@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     @Query(value = "SELECT v FROM Vehicle v WHERE cast(v.id as string) = :keyword"

@@ -27,6 +27,7 @@ public class EnterpriseController {
                                  Model m,
                                  @PageableDefault(size = 5, sort = "id", direction = Sort.Direction.ASC) Pageable p) {
         m.addAttribute("enterprises", ep.findAllForUI(u, p));
+        System.out.printf("EnterpriseController - %d%n", System.currentTimeMillis());
         m.addAttribute("timeZones", ep.getTimeZones());
         return "enterprises";
     }

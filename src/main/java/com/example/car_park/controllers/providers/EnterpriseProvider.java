@@ -47,13 +47,13 @@ public class EnterpriseProvider {
     }
 
     public List<EnterpriseViewModel> findAllForUI(User u, Pageable p) {
-        return r.findAllByManagersContaining(mp.getManagerByUser(u), p).getContent().stream()
+        return r.findAllByManagersContaining(u.getManager(), p).getContent().stream()
             .map(m::toModel)
             .toList();
     }
 
     public List<EnterpriseResponseDto> findAllForRest(User u, Pageable p) {
-        return r.findAllByManagersContaining(mp.getManagerByUser(u), p).getContent().stream()
+        return r.findAllByManagersContaining(u.getManager(), p).getContent().stream()
             .map(m::enterpriseToEnterpriseResponseDto)
             .toList();
     }
@@ -61,7 +61,7 @@ public class EnterpriseProvider {
     public Enterprise findById(User u, Long id) {
         r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
             String.format("Предприятие с id=%d отсутствует", id)));
-        return s.getIfBelongs(mp.getManagerByUser(u), id);
+        return s.getIfBelongs(u.getManager(), id);
     }
 
     public EnterpriseResponseDto findByIdForRest(User u, Long id) {
@@ -81,7 +81,7 @@ public class EnterpriseProvider {
     public Long create(User u, EnterpriseRequestDto dto) {
         List<Vehicle> vs = vp.findAllByIds(u, dto.getVehicleIds());
         List<Driver> ds = dp.findAllByIds(u, dto.getDriverIds());
-        List<Manager> ms = new ArrayList<>(List.of(mp.getManagerByUser(u)));
+        List<Manager> ms = new ArrayList<>(List.of(u.getManager()));
         Enterprise e = m.enterpriseRequestDtoToEnterprise(dto, vs, ds, ms);
         vs.forEach(v -> v.setEnterprise(e));
         ds.forEach(d -> d.setEnterprise(e));
@@ -110,7 +110,7 @@ public class EnterpriseProvider {
 
     public void delete(User u, Long id) {
         Enterprise e = findById(u, id);
-        mp.getManagerByUser(u).getManagedEnterprises().remove(e);
+        u.getManager().getManagedEnterprises().remove(e);
         r.delete(e);
     }
 }

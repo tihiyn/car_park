@@ -1,6 +1,7 @@
 package com.example.car_park.controllers.providers;
 
 import com.example.car_park.controllers.dto.response.VehicleEditDto;
+import com.example.car_park.dao.BrandCachedRepository;
 import com.example.car_park.dao.BrandRepository;
 import com.example.car_park.dao.mapper.BrandMapper;
 import com.example.car_park.dao.model.Brand;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BrandProvider {
     private final BrandRepository r;
+    private final BrandCachedRepository cr;
     private final BrandMapper m;
 
     public List<VehicleEditDto.BrandEditDto> findAll() {
@@ -24,7 +26,6 @@ public class BrandProvider {
     }
 
     public Brand findById(Long id) {
-        return r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Бренд с id=%d отсутствует", id)));
+        return cr.findById(id);
     }
 }

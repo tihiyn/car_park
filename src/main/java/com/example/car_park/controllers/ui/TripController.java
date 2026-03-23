@@ -27,6 +27,7 @@ public class TripController {
                                       @RequestParam ZonedDateTime to,
                                       Model m) {
         List<TripsViewModel> trips = tp.findInIntervalForUI(u, vId, from, to);
+        System.out.printf("TripController - %d%n", System.currentTimeMillis());
         m.addAttribute("trips", trips);
         return "trips :: list";
     }

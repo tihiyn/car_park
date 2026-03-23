@@ -5,6 +5,7 @@ import com.example.car_park.controllers.dto.response.VehicleCreateDto;
 import com.example.car_park.controllers.dto.response.VehicleEditDto;
 import com.example.car_park.controllers.dto.response.VehicleInfoViewModel;
 import com.example.car_park.controllers.dto.response.VehicleResponseDto;
+import com.example.car_park.dao.VehicleCachedRepository;
 import com.example.car_park.dao.VehicleRepository;
 import com.example.car_park.dao.mapper.VehicleMapper;
 import com.example.car_park.dao.model.Brand;
@@ -14,6 +15,7 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,12 +27,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @Service
 @RequiredArgsConstructor
 public class VehicleProvider {
     private final VehicleService s;
     private final VehicleRepository r;
+    private final VehicleCachedRepository cr;
     private final VehicleMapper m;
     private final ManagerProvider mp;
     private final BrandProvider bp;
@@ -45,7 +49,7 @@ public class VehicleProvider {
     }
 
     public List<VehicleResponseDto> findAllForRest(User u, Pageable p) {
-        return r.findAllByEnterpriseIn(mp.getManagerByUser(u).getManagedEnterprises(), p).stream()
+        return r.findAllByEnterpriseIn(u.getManager().getManagedEnterprises(), p).stream()
             .map(m::vehicleToVehicleResponseDto)
             .toList();
     }
@@ -71,9 +75,8 @@ public class VehicleProvider {
     }
 
     public Vehicle findById(User u, Long id) {
-        r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Транспортное средство с id=%d отсутствует", id)));
-        return s.getIfBelongs(mp.getManagerByUser(u), id);
+        Vehicle v = cr.findById(id);
+        return s.getIfBelongs(mp.getManagerByUser(u), v.getId());
     }
 
     public Vehicle findByRegNum(User u, String regNum) {
@@ -86,12 +89,8 @@ public class VehicleProvider {
     }
 
     public VehicleEditDto edit(User u, Long id) {
-        boolean isExist = r.findById(id).isPresent();
-        if (!isExist) {
-            return null;
-        }
         try {
-            Vehicle v = s.getIfBelongs(mp.getManagerByUser(u), id);
+            Vehicle v = s.getIfBelongs(mp.getManagerByUser(u), cr.findById(id).getId());
             return m.toEdit(v);
         } catch (ResponseStatusException e) {
             return null;
@@ -103,11 +102,11 @@ public class VehicleProvider {
     }
 
     public List<VehicleEditDto.DriverEditDto> findAllDriversFromEnterprise(Long vId) {
-        return dp.findAllFromEnterprise(r.findById(vId).get().getEnterprise().getId());
+        return dp.findAllFromEnterprise(cr.findById(vId).getEnterprise().getId());
     }
 
     public List<VehicleEditDto.DriverEditDto> findAllDriversWithoutActiveVehicle(Long vId) {
-        return dp.findAllWithoutActiveVehicle(r.findById(vId).get().getEnterprise().getId());
+        return dp.findAllWithoutActiveVehicle(cr.findById(vId).getEnterprise().getId());
     }
 
     public VehicleCreateDto prepareToCreate(User u, Long eId) {
@@ -181,7 +180,7 @@ public class VehicleProvider {
         if (!existing.getActiveDriver().getId().equals(dto.getActiveDriver().getId())) {
             existing.setActiveDriver(dp.findByIdIn(existing.getDrivers(), dto.getActiveDriver().getId()));
         }
-        r.save(existing);
+        cr.update(existing);
     }
 
     public VehicleResponseDto edit(User u, Long id, VehicleRequestDto dto) {
@@ -214,7 +213,7 @@ public class VehicleProvider {
                 .orElse(null);
             existing.setActiveDriver(ad);
         }
-        return m.vehicleToVehicleResponseDto(r.save(existing));
+        return m.vehicleToVehicleResponseDto(cr.update(existing));
     }
 
     public void delete(User u, Long id) {
@@ -224,6 +223,6 @@ public class VehicleProvider {
         v.getEnterprise().getVehicles().remove(v);
         v.getDrivers().forEach(d -> d.getVehicles().remove(v));
         v.getActiveDriver().setActiveVehicle(null);
-        r.delete(v);
+        cr.delete(v);
     }
 }
