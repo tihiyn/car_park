@@ -30,6 +30,7 @@ public class AuthenticationController {
     public String authenticate(@ModelAttribute UserAuthenticationDto userAuthenticationDto,
                                HttpServletResponse response) {
         User authenticatedUser = authenticationService.authenticate(userAuthenticationDto);
+        System.out.printf("AuthenticationController - %d%n", System.currentTimeMillis());
         String jwt = jwtService.generateToken(authenticatedUser);
         response.addCookie(jwtService.addJwtToCookie(jwt));
         return "redirect:/api/ui/enterprises";

@@ -16,7 +16,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class VehicleService {
     public Vehicle getIfBelongs(Manager m, Long id) {
         return m.getManagedEnterprises().stream()
-            .flatMap(enterprise -> enterprise.getVehicles().stream())
+            .flatMap(e -> e.getVehicles().stream())
             .filter(v -> v.getId().equals(id))
             .findAny()
             .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,

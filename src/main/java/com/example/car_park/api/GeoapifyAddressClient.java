@@ -3,6 +3,7 @@ package com.example.car_park.api;
 import com.example.car_park.api.response.GeoapifyResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -19,7 +20,9 @@ public class GeoapifyAddressClient implements AddressClient {
 
     // TODO: реализовать получение адресов батчами
     @Override
+    @Cacheable(value = "getAddressByCoords", unless = "#result == null")
     public String getAddressByCoords(double longitude, double latitude) {
+        System.out.println("Start getAddressByCoords");
         final String url = String.format("%slat=%s&lon=%s&format=%s&apiKey=%s",
                 baseUrl,
                 latitude,
@@ -31,6 +34,7 @@ public class GeoapifyAddressClient implements AddressClient {
             throw new RuntimeException("Пустой ответ от Geoapify");
         }
         GeoapifyResponse.Result info = response.getResults().getFirst();
+        System.out.println(info.toString());
         return info.toString();
     }
 }

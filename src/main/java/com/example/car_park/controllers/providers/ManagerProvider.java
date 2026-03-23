@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ManagerProvider {
-    private final UserRepository userRepository;
+    private final UserRepository ur;
 
     public Manager getManagerByUser(User user) {
-        return userRepository.findByUsername(user.getUsername())
+        return ur.findByUsername(user.getUsername())
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден")).getManager();
     }
 }

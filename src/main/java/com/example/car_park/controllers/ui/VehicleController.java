@@ -25,7 +25,9 @@ public class VehicleController {
     public String findById(@AuthenticationPrincipal User u,
                            @PathVariable(required = false) Long id,
                            Model m) {
+        System.out.printf("findById - %d%n", System.currentTimeMillis());
         m.addAttribute("vehicle", vp.findByIdForUI(u, id));
+        System.out.printf("findById - %d%n", System.currentTimeMillis());
         return "vehicle_info";
     }
 

@@ -8,7 +8,5 @@ import java.time.ZonedDateTime;
 import java.util.List;
 
 public interface VehicleLocationRepository extends JpaRepository<VehicleLocation, Long> {
-
-    List<VehicleLocation> findVehicleLocationsByVehicleAndTimestampBetween(Vehicle v, ZonedDateTime b, ZonedDateTime e);
     List<VehicleLocation> findAllByVehicleAndTimestampBetween(Vehicle v, ZonedDateTime b, ZonedDateTime e);
 }

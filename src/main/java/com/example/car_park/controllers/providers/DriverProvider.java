@@ -30,8 +30,7 @@ public class DriverProvider {
     private final ManagerProvider mp;
 
     public List<DriverDto> findAllForRest(User u, Pageable p) {
-        Manager m = mp.getManagerByUser(u);
-        return r.findAllByEnterpriseIn(m.getManagedEnterprises(), p).stream()
+        return r.findAllByEnterpriseIn(u.getManager().getManagedEnterprises(), p).stream()
             .map(dm::driverToDriverDto)
             .toList();
     }
