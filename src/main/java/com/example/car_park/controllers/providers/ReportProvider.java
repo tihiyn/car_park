@@ -12,6 +12,7 @@ import com.example.car_park.dao.model.VehicleMileageReport;
 import com.example.car_park.enums.Period;
 import com.example.car_park.service.ReportService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReportProvider {
     private final ReportService rs;
     private final VehicleProvider vp;
@@ -54,6 +56,7 @@ public class ReportProvider {
         try (Workbook wb = new XSSFWorkbook()) {
             return rs.fillVehicleMileageReportFile(r, wb);
         } catch (IOException e) {
+            log.error("Ошибка при формировании отчёта о пробеге: не удалось создать файл", e);
             throw new RuntimeException(e);
         }
     }
@@ -68,6 +71,7 @@ public class ReportProvider {
         try (Workbook wb = new XSSFWorkbook()) {
             return rs.fillProductionYearReportFile(r, wb);
         } catch (IOException e) {
+            log.error("Ошибка при формировании отчёта о количестве автомобилей по годам производства: не удалось создать файл", e);
             throw new RuntimeException(e);
         }
     }
@@ -82,6 +86,7 @@ public class ReportProvider {
         try (Workbook wb = new XSSFWorkbook()) {
             return rs.fillAverageSalaryReportFile(r, wb);
         } catch (IOException e) {
+            log.error("Ошибка при формировании отчёта о средней зарплате водителей: не удалось создать файл", e);
             throw new RuntimeException(e);
         }
     }

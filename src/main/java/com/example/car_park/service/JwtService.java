@@ -18,7 +18,6 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    // TODO создать локальный конфиг
     @Value(value = "${security.jwt.secret-key}")
     private String secretKey;
     @Value(value = "${security.jwt.expiration-time}")

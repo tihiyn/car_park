@@ -14,6 +14,7 @@ import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.ZoneId;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TripService {
     private final VehicleLocationMapper vehicleLocationMapper;
 
@@ -78,11 +80,13 @@ public class TripService {
             .map(wp -> vehicleLocationMapper.wayPointToVehicleLocation(wp, v, tz))
             .toList();
         if (locations.isEmpty()) {
+            log.error("Ошибка при импорте поездки на авто c id={}: файл пуст", v.getId());
             throw new RuntimeException("В файле отсутствуют поездки");
         }
         VehicleLocation begin = locations.getFirst();
         VehicleLocation end = locations.getLast();
         if (!checkTripNotIntersectsWithOthers(saved, begin, end)) {
+            log.error("Ошибка при импорте поездки на авто c id={}: поездка пересекается с существующими", v.getId());
             throw new RuntimeException("Поездка пересекается с существующими");
         }
         return locations;
