@@ -21,10 +21,11 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa & chmod 600 ~/.ssh/id_rsa
-      - name: Transfer jar, resources, Dockerfile and docker-compose.yaml to server using scp
+      - name: Transfer jar, resources, nginx conf, Dockerfile and docker-compose.yaml to server using scp
         run: |
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa target/car_park-0.0.1-SNAPSHOT.jar ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r src/main/resources ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r src/main/resources ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park/src/main
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r nginx ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
           scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yaml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
       - name: Connect to server, stop containers, delete container with app and run all containers
