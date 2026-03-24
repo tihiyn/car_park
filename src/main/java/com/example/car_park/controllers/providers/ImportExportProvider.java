@@ -3,6 +3,7 @@ package com.example.car_park.controllers.providers;
 import com.example.car_park.controllers.dto.response.ExportResp;
 import com.example.car_park.controllers.dto.response.ImportResp;
 import com.example.car_park.service.ImportExportService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
@@ -28,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 public class ImportExportProvider {
     private final ImportExportService ies;
     private final JobLauncher jobLauncher;
@@ -82,10 +84,10 @@ public class ImportExportProvider {
             };
             return ies.buildExportResp(res, f.length(), format);
         } catch (IOException e) {
-            System.err.println("Ошибка при создании файла");
+            log.error("Ошибка при создании файла", e);
             return null;
         } catch (JobExecutionException e) {
-            System.err.println("Ошибка при выполнении экспорта");
+            log.error("Ошибка при выполнении экспорта", e);
             return null;
         }
     }
@@ -106,8 +108,10 @@ public class ImportExportProvider {
             }
             return new ImportResp(true, "Импорт завершён успешно");
         } catch (IOException e) {
+            log.error("Не удалось создать временный файл из файла {}", file.getName(), e);
             return new ImportResp(false, "Не удалось создать файл");
         } catch (JobExecutionException e) {
+            log.error("Ошибка при выполнении импорта файла {}", file.getName(), e);
             return new ImportResp(false, "Ошибка при выполнении импорта");
         }
     }
@@ -120,7 +124,7 @@ public class ImportExportProvider {
                     Files.delete(f.toPath());
                 }
             } catch (IOException e) {
-                System.err.printf("Ошибка при удалении файла: %s", f.getName());
+                log.error("Ошибка при удалении временного файла {}", f.getName(), e);
             } finally {
                 executor.shutdown();
             }

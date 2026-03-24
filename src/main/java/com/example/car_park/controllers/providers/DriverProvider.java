@@ -9,6 +9,7 @@ import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.service.DriverService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DriverProvider {
     private final DriverService s;
     private final DriverRepository r;
@@ -36,8 +38,11 @@ public class DriverProvider {
     }
 
     public DriverDto findByIdForRest(User u, Long id) {
-        r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Водитель с id=%d отсутствует", id)));
+        r.findById(id).orElseThrow(() -> {
+            log.error("Водитель с id={} отсутствует", id);
+            return new ResponseStatusException(HttpStatus.NOT_FOUND,
+                String.format("Водитель с id=%d отсутствует", id));
+        });
         return dm.driverToDriverDto(s.getIfBelongs(mp.getManagerByUser(u), id));
     }
 

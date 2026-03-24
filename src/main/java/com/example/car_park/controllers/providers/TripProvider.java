@@ -20,6 +20,7 @@ import com.example.car_park.service.NotificationService;
 import com.example.car_park.service.TripService;
 import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
@@ -38,6 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TripProvider {
     private final TripService ts;
     private final NotificationService ns;
@@ -90,6 +92,7 @@ public class TripProvider {
             b.withZoneSameInstant(ZoneId.of("UTC"))
         );
         if (trips.isEmpty()) {
+            log.warn("Поездки на авто с id={} в промежутке с {} по {} отсутствуют", vId, s, b);
             return new ArrayList<>();
         }
         ZonedDateTime minBegin = ts.findMinBegin(trips);
@@ -122,6 +125,7 @@ public class TripProvider {
             Files.deleteIfExists(tmp);
             return gpx;
         } catch (IOException e) {
+            log.error("Ошибка при импорте поездки: не удалось загрузить файл");
             throw new RuntimeException("Не удалось загрузить файл поездки");
         }
     }
@@ -140,7 +144,6 @@ public class TripProvider {
     }
 
     public List<GeoJsonFeatureCollection> findTripsForMap(List<Long> tIds) {
-        System.out.printf("findTripsForMap - %d%n", System.currentTimeMillis());
         Map<Long, List<VehicleLocation>> tMap = new HashMap<>();
         for (Long tId : tIds) {
             // FIXME: обращение к БД в цикле
@@ -155,7 +158,6 @@ public class TripProvider {
                 tMap.put(tId, locs);
             }
         }
-        System.out.printf("findTripsForMap - %d%n", System.currentTimeMillis());
         return ts.convertToGeoJson(tMap);
     }
 

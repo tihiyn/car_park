@@ -2,6 +2,7 @@ package com.example.car_park.service;
 
 import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.Vehicle;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -13,14 +14,18 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
+@Slf4j
 public class VehicleService {
     public Vehicle getIfBelongs(Manager m, Long id) {
         return m.getManagedEnterprises().stream()
             .flatMap(e -> e.getVehicles().stream())
             .filter(v -> v.getId().equals(id))
             .findAny()
-            .orElseThrow(() -> new ResponseStatusException(FORBIDDEN,
-                String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id)));
+            .orElseThrow(() -> {
+                log.error("Транспортное средство с id={} не относится к предприятиям менеджера с id={}", id, m.getId());
+                return new ResponseStatusException(FORBIDDEN,
+                    String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id));
+            });
     }
 
     public List<Vehicle> findAllByManager(Manager m) {
@@ -40,6 +45,7 @@ public class VehicleService {
         Set<Long> missingIds = toFindIds.stream()
             .filter(id -> !allIds.contains(id))
             .collect(Collectors.toSet());
+        log.error("Транспортные средства с id {} отсутствуют", missingIds);
         throw new ResponseStatusException(NOT_FOUND,
             "Транспортные средства с id %s отсутствуют".formatted(missingIds));
     }
@@ -52,6 +58,7 @@ public class VehicleService {
             .filter(id -> managed.stream()
                 .noneMatch(v -> v.getId().equals(id)))
             .collect(Collectors.toSet());
+        log.error("Транспортные средства с id {} не относятся к Вашим предприятиям", unmanagedIds);
         throw new ResponseStatusException(FORBIDDEN,
             "Транспортные средства с id %s не относятся к Вашим предприятиям".formatted(unmanagedIds));
     }

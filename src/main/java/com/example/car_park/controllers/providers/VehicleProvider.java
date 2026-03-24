@@ -15,6 +15,7 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ import static org.springframework.http.HttpStatus.FORBIDDEN;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class VehicleProvider {
     private final VehicleService s;
     private final VehicleRepository r;
@@ -84,6 +86,7 @@ public class VehicleProvider {
         if (ov.isPresent()) {
             return s.getIfBelongs(mp.getManagerByUser(u), ov.get().getId());
         }
+        log.error("Транспортное средство с номером {} отсутствует", regNum);
         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
             String.format("Транспортное средство с номером=%s отсутствует", regNum));
     }
@@ -146,6 +149,8 @@ public class VehicleProvider {
         List<Driver> ds = dp.findAllByIds(u, dto.getDriverIds());
         if (dto.getActiveDriverId() != null &&
             !dto.getDriverIds().contains(dto.getActiveDriverId())) {
+            log.error("Ошибка при создании транспортного средства: активный водитель с id={} не принадлежит списку назначенных водителей {}",
+                dto.getActiveDriverId(), dto.getDriverIds());
             throw new ResponseStatusException(BAD_REQUEST,
                 "Активный водитель должен быть из списка назначенных водителей");
         }
@@ -202,6 +207,8 @@ public class VehicleProvider {
         }
         if (dto.getActiveDriverId() != null &&
             !dto.getDriverIds().contains(dto.getActiveDriverId())) {
+            log.error("Ошибка при редактировании транспортного средства: активный водитель с id={} не принадлежит списку назначенных водителей {}",
+                dto.getActiveDriverId(), dto.getDriverIds());
             throw new ResponseStatusException(BAD_REQUEST,
                 "Активный водитель должен быть из списка назначенных водителей");
         }

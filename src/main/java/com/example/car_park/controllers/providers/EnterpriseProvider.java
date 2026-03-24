@@ -11,6 +11,7 @@ import com.example.car_park.dao.model.Manager;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.EnterpriseService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class EnterpriseProvider {
     private final EnterpriseService s;
     private final EnterpriseRepository r;
@@ -59,8 +61,11 @@ public class EnterpriseProvider {
     }
 
     public Enterprise findById(User u, Long id) {
-        r.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-            String.format("Предприятие с id=%d отсутствует", id)));
+        r.findById(id).orElseThrow(() -> {
+            log.error("Предприятие с id={} отсутствует", id);
+            return new ResponseStatusException(HttpStatus.NOT_FOUND,
+                String.format("Предприятие с id=%d отсутствует", id));
+        });
         return s.getIfBelongs(u.getManager(), id);
     }
 
