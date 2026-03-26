@@ -62,6 +62,7 @@ services:
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./resources/static:/usr/share/nginx/html/static:ro
+      - ~/logs/nginx:/var/log/nginx
     ports:
       - "80:80"
     networks:
