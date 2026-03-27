@@ -4,7 +4,7 @@
         <file>${user.home}/logs/car_park-${INSTANCE_ID}.log</file>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/logs/car_park.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${user.home}/logs/car_park-${INSTANCE_ID}.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>365</maxHistory>
         </rollingPolicy>
     </appender>
