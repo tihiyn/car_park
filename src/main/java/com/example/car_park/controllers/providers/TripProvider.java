@@ -63,7 +63,6 @@ public class TripProvider {
     public List<TripsViewModel> findInIntervalForUI(User u, Long vId, ZonedDateTime s, ZonedDateTime b) {
         Vehicle v = vp.findById(u, vId);
         List<Trip> trips = findInInterval(v, s, b);
-        System.out.printf("TripProvider - %d%n", System.currentTimeMillis());
         return trips.stream()
             .map(t -> m.tripToTripsViewModel(
                 t,

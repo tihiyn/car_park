@@ -2,6 +2,7 @@ package com.example.car_park.dao.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,6 +11,7 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.hibernate.annotations.BatchSize;
 import org.locationtech.jts.geom.Point;
 
 import java.time.ZonedDateTime;
@@ -19,6 +21,7 @@ import java.time.ZonedDateTime;
 @Getter
 @Setter
 @Accessors(chain = true)
+@BatchSize(size = 10)
 public class VehicleLocation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +30,6 @@ public class VehicleLocation {
     private Point location;
     private ZonedDateTime timestamp;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private Vehicle vehicle;
 }
