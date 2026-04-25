@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.ZoneId;
@@ -29,7 +30,6 @@ public class EnterpriseProvider {
     private final EnterpriseService s;
     private final EnterpriseRepository r;
     private final EnterpriseMapper m;
-    private final ManagerProvider mp;
     private final VehicleProvider vp;
     private final DriverProvider dp;
 
@@ -37,13 +37,11 @@ public class EnterpriseProvider {
     public EnterpriseProvider(EnterpriseService s,
                               EnterpriseRepository r,
                               EnterpriseMapper m,
-                              ManagerProvider mp,
                               @Lazy VehicleProvider vp,
                               DriverProvider dp) {
         this.s = s;
         this.r = r;
         this.m = m;
-        this.mp = mp;
         this.vp = vp;
         this.dp = dp;
     }
@@ -77,12 +75,13 @@ public class EnterpriseProvider {
         return s.getTimeZones();
     }
 
+    @Transactional
     public void updateTimeZone(User u, Long id, String tz) {
         Enterprise e = findById(u, id);
         e.setTimeZone(ZoneId.of(tz));
-        r.save(e);
     }
 
+    @Transactional
     public Long create(User u, EnterpriseRequestDto dto) {
         List<Vehicle> vs = vp.findAllByIds(u, dto.getVehicleIds());
         List<Driver> ds = dp.findAllByIds(u, dto.getDriverIds());
@@ -94,6 +93,7 @@ public class EnterpriseProvider {
         return r.save(e).getId();
     }
 
+    @Transactional
     public EnterpriseResponseDto edit(User u, Long id, EnterpriseRequestDto dto) {
         Enterprise existing = findById(u, id);
         m.enterpriseRequestDtoToEnterprise(dto, existing);

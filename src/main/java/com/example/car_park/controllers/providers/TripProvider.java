@@ -22,6 +22,7 @@ import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
@@ -107,6 +108,7 @@ public class TripProvider {
         return vlm.vehicleLocationsToGeoJsonMap(filtered, v.getEnterprise().getTimeZone());
     }
 
+    @Transactional
     public void saveFromFile(User u, Long vId, MultipartFile f) {
         GPX gpx = getGPX(f);
         Vehicle v = vp.findById(u, vId);

@@ -96,7 +96,7 @@ public class BatchConfig {
     @Bean
     public Step jsonExportStep() {
         return new StepBuilder("jsonExportStep", jobRepository)
-                .<Trip, EnterpriseExportDto>chunk(100, transactionManager) // chunk size = 100
+                .<Trip, EnterpriseExportDto>chunk(100, transactionManager)
                 .reader(reader(null, null, null))
                 .processor(jsonProcessor())
                 .writer(jsonWriter(null))

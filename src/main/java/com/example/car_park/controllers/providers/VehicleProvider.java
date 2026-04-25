@@ -16,10 +16,10 @@ import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.service.VehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -143,6 +143,7 @@ public class VehicleProvider {
         r.save(v);
     }
 
+    @Transactional
     public Long create(User u, VehicleRequestDto dto) {
         Brand b = bp.findById(dto.getBrandId());
         Enterprise e = ep.findById(u, dto.getEnterpriseId());
@@ -166,6 +167,7 @@ public class VehicleProvider {
         return r.save(v).getId();
     }
 
+    @Transactional
     public void update(User u, VehicleEditDto dto) {
         Vehicle existing = findById(u, dto.getId());
         m.editDtoToEntity(dto, existing);
@@ -188,6 +190,7 @@ public class VehicleProvider {
         cr.update(existing);
     }
 
+    @Transactional
     public VehicleResponseDto edit(User u, Long id, VehicleRequestDto dto) {
         Vehicle existing = findById(u, id);
         m.vehicleRequestDtoToVehicle(dto, existing);
