@@ -29,6 +29,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/error/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/test/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/api/**").hasRole("MANAGER")
                         .anyRequest().authenticated()
                 )
