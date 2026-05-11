@@ -78,7 +78,11 @@ public class VehicleProvider {
 
     public Vehicle findById(User u, Long id) {
         Vehicle v = cr.findById(id);
-        return s.getIfBelongs(mp.getManagerByUser(u), v.getId());
+        if (!r.isBelongManagedEnterprises(id, u.getId())) {
+            throw new ResponseStatusException(FORBIDDEN,
+                String.format("Транспортное средство с id=%d не относится к Вашим предприятиям", id));
+        }
+        return v;
     }
 
     public Vehicle findByRegNum(User u, String regNum) {

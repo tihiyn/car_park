@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     @Query(value = "SELECT v FROM Vehicle v WHERE cast(v.id as string) = :keyword"
@@ -32,4 +31,12 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     List<Vehicle> findAllByEnterpriseIn(List<Enterprise> enterprises);
 
     Optional<Vehicle> findByRegNum(String regNum);
+
+    @Query("""
+    SELECT COUNT(v) > 0 FROM Vehicle v
+    JOIN v.enterprise e
+    JOIN e.managers m
+    WHERE v.id = :vehicleId AND m.user.id = :userId
+    """)
+    boolean isBelongManagedEnterprises(@Param("vehicleId") Long vehicleId, @Param("userId") Long userId);
 }
