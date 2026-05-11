@@ -36,7 +36,7 @@ services:
       - app-network
 
   db:
-    image: postgis/postgis:16-3.4
+    image: postgis/postgis:17-master
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
