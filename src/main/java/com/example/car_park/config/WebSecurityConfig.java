@@ -28,6 +28,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/error/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/test/**").permitAll()
                         .requestMatchers("/api/**").hasRole("MANAGER")
                         .anyRequest().authenticated()
                 )
