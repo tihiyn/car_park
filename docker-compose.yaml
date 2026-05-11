@@ -76,7 +76,10 @@ services:
     entrypoint: [ "k6" ]
     networks:
       - app-network
-    cpus: 1.0
+    deploy:
+      resources:
+        limits:
+          cpus: 1.0
 
 volumes:
   db-data:
