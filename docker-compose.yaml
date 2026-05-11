@@ -68,6 +68,16 @@ services:
     networks:
       - app-network
 
+  k6:
+    image: grafana/k6:latest
+    volumes:
+      - ./loadtest:/scripts:ro
+    working_dir: /scripts
+    entrypoint: [ "k6" ]
+    networks:
+      - app-network
+    cpus: 1.0
+
 volumes:
   db-data:
 
