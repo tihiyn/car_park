@@ -10,8 +10,9 @@ export const options = {
 };
 
 export default function () {
+    const token = __ENV.JWT;
     const res = http.get('http://nginx/api/vehicles/25024', {
-        headers: { Cookie: 'JWT=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiLQkNC90LjRgdC40LzQvtCy0JLQoSIsImlhdCI6MTc3ODUwNzgyOCwiZXhwIjoxNzc4NTUxMDI4fQ.4gwUplsT2fa4D6soaitLvhYVQB9uuZHJRB_-sfyplRk' },
+        headers: { Cookie: token },
     });
 
     check(res, {
