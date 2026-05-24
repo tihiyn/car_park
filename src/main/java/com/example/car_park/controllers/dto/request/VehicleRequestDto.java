@@ -33,6 +33,6 @@ public class VehicleRequestDto {
     private Long enterpriseId;
     private Long activeDriverId;
 
-    @NotNull(message = "Список водителей не можеть быть null")
+    @NotNull(message = "Список водителей не может быть null")
     private Set<Long> driverIds = new HashSet<>();
 }

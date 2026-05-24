@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -220,8 +221,9 @@ public class VehicleProvider {
                 "Активный водитель должен быть из списка назначенных водителей");
         }
         // TODO: проверить, что будет если назначить водителя, который активен на другой машине
-        if (!existing.getActiveDriver().getId().equals(dto.getActiveDriverId())) {
-            Driver ad = existing.getDrivers().stream()
+        Long existingActiveDriverId = existing.getActiveDriver() == null ? null : existing.getActiveDriver().getId();
+        if (!Objects.equals(existingActiveDriverId, dto.getActiveDriverId())) {
+            Driver ad = dto.getActiveDriverId() == null ? null : existing.getDrivers().stream()
                 .filter(driver -> driver.getId().equals(dto.getActiveDriverId()))
                 .findAny()
                 .orElse(null);
