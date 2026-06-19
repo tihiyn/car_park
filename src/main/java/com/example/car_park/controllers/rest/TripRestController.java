@@ -6,6 +6,7 @@ import com.example.car_park.controllers.providers.TripProvider;
 import com.example.car_park.dao.model.User;
 import com.example.car_park.enums.Format;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/trips")
 @RequiredArgsConstructor
+@Slf4j
 public class TripRestController {
     private final TripProvider tp;
 
@@ -41,6 +43,7 @@ public class TripRestController {
             tp.saveFromFile(u, vId, f);
             return ResponseEntity.ok("Поездка сохранена");
         } catch (RuntimeException e) {
+            log.error("Ошибка при загрузке поездки для авто id={}", vId, e);
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
