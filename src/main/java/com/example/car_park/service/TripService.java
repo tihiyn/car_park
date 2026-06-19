@@ -124,14 +124,16 @@ public class TripService {
             .setTimestamp(ZonedDateTime.now());
     }
 
-    public Notification buildNotification(Vehicle v, String start, String finish) {
+    public Notification buildNotification(Vehicle v, VehicleLocation begin, VehicleLocation end) {
         Set<String> ms = v.getEnterprise().getManagers().stream()
             .map(Manager::getUser)
             .map(User::getUsername)
             .collect(Collectors.toSet());
         return new Notification()
-            .setStart(start)
-            .setFinish(finish)
+            .setBeginLon(begin.getLocation().getX())
+            .setBeginLat(begin.getLocation().getY())
+            .setEndLon(end.getLocation().getX())
+            .setEndLat(end.getLocation().getY())
             .setEnterprise(v.getEnterprise().getName())
             .setRegNum(v.getRegNum())
             .setManagers(ms);
