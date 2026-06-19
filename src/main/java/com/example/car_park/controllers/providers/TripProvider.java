@@ -110,7 +110,8 @@ public class TripProvider {
     @Transactional
     public void saveFromFile(User u, Long vId, MultipartFile f) {
         GPX gpx = getGPX(f);
-        Vehicle v = vp.findById(u, vId);
+        vp.findById(u, vId);
+        Vehicle v = vp.findByIdAttached(vId);
         List<VehicleLocation> locs = ts.getLocationsFomGPX(gpx, v, r.findAllByVehicle(v));
         Trip t = saveNewTrip(v, locs);
         eventPublisher.publishEvent(ts.buildNotification(v, t.getBeginLocation(), t.getEndLocation()));

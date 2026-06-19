@@ -86,6 +86,12 @@ public class VehicleProvider {
         return v;
     }
 
+    public Vehicle findByIdAttached(Long id) {
+        return r.findById(id).orElseThrow(() ->
+            new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND,
+                String.format("Транспортное средство с id=%d отсутствует", id)));
+    }
+
     public Vehicle findByRegNum(User u, String regNum) {
         Optional<Vehicle> ov = r.findByRegNum(regNum);
         if (ov.isPresent()) {
