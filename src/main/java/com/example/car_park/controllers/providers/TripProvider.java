@@ -16,11 +16,11 @@ import com.example.car_park.dao.model.User;
 import com.example.car_park.dao.model.Vehicle;
 import com.example.car_park.dao.model.VehicleLocation;
 import com.example.car_park.enums.Format;
-import com.example.car_park.service.NotificationService;
 import com.example.car_park.service.TripService;
 import io.jenetics.jpx.GPX;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,7 +43,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class TripProvider {
     private final TripService ts;
-    private final NotificationService ns;
+    private final ApplicationEventPublisher eventPublisher;
     private final TripRepository r;
     private final TripMapper m;
     private final VehicleProvider vp;
@@ -113,9 +113,7 @@ public class TripProvider {
         Vehicle v = vp.findById(u, vId);
         List<VehicleLocation> locs = ts.getLocationsFomGPX(gpx, v, r.findAllByVehicle(v));
         Trip t = saveNewTrip(v, locs);
-        String start = ac.getAddressByCoords(t.getBeginLocation().getLocation().getX(), t.getBeginLocation().getLocation().getY());
-        String finish = ac.getAddressByCoords(t.getEndLocation().getLocation().getX(), t.getEndLocation().getLocation().getY());
-        ns.sendNotification(ts.buildNotification(v, start, finish)).subscribe();
+        eventPublisher.publishEvent(ts.buildNotification(v, t.getBeginLocation(), t.getEndLocation()));
     }
 
     private GPX getGPX(MultipartFile f) {
