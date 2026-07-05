@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   ci:
@@ -23,7 +26,7 @@ jobs:
   cd:
     needs: ci
     runs-on: ubuntu-24.04
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: deploy
         uses: appleboy/ssh-action@v1.2.5
