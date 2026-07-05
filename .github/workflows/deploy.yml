@@ -1,11 +1,11 @@
-name: Deploy app to server
+name: CI/CD
 on:
   push:
     branches:
       - main
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -13,22 +13,28 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Build
-        run: |
-          mvn package -DskipTests
-          ls -la
-      - name: Get SSH key and set permissions
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa & chmod 600 ~/.ssh/id_rsa
-      - name: Transfer jar, resources, nginx conf, Dockerfile and docker-compose.yaml to server using scp
-        run: |
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa target/car_park-0.0.1-SNAPSHOT.jar ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r src/main/resources ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r nginx ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r k6 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa Dockerfile ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa docker-compose.yaml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/car_park
-      - name: Connect to server, stop containers, delete container with app and run all containers
-        run:
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/car_park && cp application.properties resources && docker compose down && docker rmi car_park 2>/dev/null || true && docker compose up --build -d"
+          cache: "maven"
+      - name: compile
+        run: mvn -B compile
+      - name: test
+        run: mvn -B test
+      - name: package
+        run: mvn -B verify -DskipTests
+  cd:
+    needs: ci
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: deploy
+      - uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/car_park &&
+            git pull origin main &&
+            docker compose build backend-1 &&
+            docker compose up -d backend-1 &&
+            docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload &&
+            docker image prune -f
