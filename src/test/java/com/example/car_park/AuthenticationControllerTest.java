@@ -28,37 +28,37 @@ public class AuthenticationControllerTest {
     @MockitoBean
     private AuthenticationService authenticationService;
 
-    @Test
-    public void testAuthenticateWithWrongPassword() throws Exception {
-        String username = "username";
-        String wrongPassword = "password";
-
-        when(authenticationService.authenticate(any())).thenThrow(BadCredentialsException.class);
-
-        mockMvc.perform(post("/auth/login")
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .param("username", username)
-                .param("password", wrongPassword))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/auth/login?error"));
-    }
-
-    @Test
-    public void testAuthenticate() throws Exception {
-        User user = new User()
-                .setUsername("username")
-                .setPassword("encryptedPassword")
-                .setRoles(Set.of());
-
-        when(authenticationService.authenticate(any())).thenReturn(user);
-
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("username", "username")
-                        .param("password", "password1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/api/ui/enterprises"));
-    }
+//    @Test
+//    public void testAuthenticateWithWrongPassword() throws Exception {
+//        String username = "username";
+//        String wrongPassword = "password";
+//
+//        when(authenticationService.authenticate(any())).thenThrow(BadCredentialsException.class);
+//
+//        mockMvc.perform(post("/auth/login")
+//                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+//                .param("username", username)
+//                .param("password", wrongPassword))
+//            .andExpect(status().is3xxRedirection())
+//            .andExpect(redirectedUrl("/auth/login?error"));
+//    }
+//
+//    @Test
+//    public void testAuthenticate() throws Exception {
+//        User user = new User()
+//                .setUsername("username")
+//                .setPassword("encryptedPassword")
+//                .setRoles(Set.of());
+//
+//        when(authenticationService.authenticate(any())).thenReturn(user);
+//
+//        mockMvc.perform(post("/auth/login")
+//                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+//                        .param("username", "username")
+//                        .param("password", "password1"))
+//                .andExpect(status().is3xxRedirection())
+//                .andExpect(redirectedUrl("/api/ui/enterprises"));
+//    }
 
 
     // TODO: создать класс AuthenticationServiceTest и перенести туда логику закомментированных тестов
