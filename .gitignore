@@ -39,3 +39,9 @@ build/
 /.env
 
 db-init
+
+### Cypress (e2e) ###
+e2e/node_modules
+e2e/cypress/videos
+e2e/cypress/screenshots
+e2e/cypress.env.json

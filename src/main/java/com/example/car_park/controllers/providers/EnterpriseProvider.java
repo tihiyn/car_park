@@ -75,10 +75,23 @@ public class EnterpriseProvider {
         return s.getTimeZones();
     }
 
+    /**
+     * Управляемая копия предприятия. {@link #findById} отдаёт сущность из графа
+     * менеджера, а тот приходит из UserDetailsService в JWT-фильтре и уже detached:
+     * по нему не работает ни dirty checking, ни ленивая подгрузка связей.
+     */
+    public Enterprise findByIdAttached(User u, Long id) {
+        findById(u, id);
+        return r.findById(id).orElseThrow(() -> {
+            log.error("Предприятие с id={} отсутствует", id);
+            return new ResponseStatusException(HttpStatus.NOT_FOUND,
+                String.format("Предприятие с id=%d отсутствует", id));
+        });
+    }
+
     @Transactional
     public void updateTimeZone(User u, Long id, String tz) {
-        Enterprise e = findById(u, id);
-        e.setTimeZone(ZoneId.of(tz));
+        findByIdAttached(u, id).setTimeZone(ZoneId.of(tz));
     }
 
     @Transactional

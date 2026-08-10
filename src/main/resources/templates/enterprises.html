@@ -57,7 +57,7 @@
             <td th:text="${enterprise.registrationNumber}">Рег. номер</td>
             <td>
                 <form th:action="@{/api/ui/enterprises/update-timezone}" method="post" class="timezone-form">
-                    <input type="hidden" th:name="enterpriseId" th:value="${enterprise.id}" />
+                    <input type="hidden" th:name="eId" th:value="${enterprise.id}" />
                     <select th:name="timeZone" class="form-select timezone-select" onchange="this.form.submit()">
                         <option th:each="zone : ${timeZones}"
                                 th:value="${zone}"
@@ -81,7 +81,7 @@
                             th:onclick="'deleteVehicle(' + ${vehicle.id} + ')'"
                             aria-label="Close"></button>
                 </span>
-                <a th:href="@{/vehicles/new(enterpriseId=${enterprise.id})}"
+                <a th:href="@{/vehicles/new(eId=${enterprise.id})}"
                    class="badge bg-secondary text-white text-decoration-none"
                    style="cursor: pointer;">
                     <span>+</span>
