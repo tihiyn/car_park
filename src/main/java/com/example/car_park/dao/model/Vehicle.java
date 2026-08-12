@@ -42,11 +42,13 @@ public class Vehicle {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enterprise_id", referencedColumnName = "id", nullable = false)
     private Enterprise enterprise;
-    @OneToOne(cascade = CascadeType.ALL)
+    // Без каскада: водители живут независимо от ТС, и удаление машины
+    // не должно удалять их из справочника
+    @OneToOne
     @JoinColumn(name = "active_driver_id", referencedColumnName = "id")
     private Driver activeDriver;
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany
     @JoinTable(
             name = "vehicle_driver_assignments",
             joinColumns = {@JoinColumn(name = "vehicle_id")},

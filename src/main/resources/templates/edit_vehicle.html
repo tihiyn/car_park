@@ -52,22 +52,27 @@
         </div>
         <div class="col-md-6">
             <label for="brand" class="form-label">Бренд</label>
-            <select th:field="*{brand}" class="form-select" id="brand" required>
+            <!-- th:field здесь не годится: поле формы имеет тип BrandEditDto, и Thymeleaf
+                 сравнивал бы value опции с toString() объекта, поэтому отмечаем выбранное вручную -->
+            <select name="brand" class="form-select" id="brand" required>
                 <option value="">Выберите бренд</option>
-                <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"></option>
+                <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"
+                        th:selected="${vehicle.brand != null and brand.id == vehicle.brand.id}"></option>
             </select>
         </div>
         <div class="col-md-6">
             <label for="drivers" class="form-label">Список водителей</label>
-            <select th:field="*{drivers}" class="selectpicker form-control" id="drivers" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="Не выбрано" data-select-all-text="Выбрать всё" data-deselect-all-text="Снять всё">
-                <option th:each="driver : ${drivers}" th:value="${driver.id}" th:text="${driver.name}"></option>
+            <select name="drivers" class="selectpicker form-control" id="drivers" multiple data-live-search="true" data-actions-box="true" data-none-selected-text="Не выбрано" data-select-all-text="Выбрать всё" data-deselect-all-text="Снять всё">
+                <option th:each="driver : ${drivers}" th:value="${driver.id}" th:text="${driver.name}"
+                        th:selected="${#lists.contains(vehicle.drivers.![id], driver.id)}"></option>
             </select>
         </div>
         <div class="col-md-6">
             <label for="activeDriver" class="form-label">Активный водитель</label>
-            <select th:field="*{activeDriver}" class="form-select" id="activeDriver">
+            <select name="activeDriver" class="form-select" id="activeDriver">
                 <option value="">Выберите водителя</option>
-                <option th:each="driver : ${activeDriverPretendents}" th:value="${driver.id}" th:text="${driver.name}"></option>
+                <option th:each="driver : ${activeDriverPretendents}" th:value="${driver.id}" th:text="${driver.name}"
+                        th:selected="${vehicle.activeDriver != null and driver.id == vehicle.activeDriver.id}"></option>
             </select>
         </div>
         <div class="col-12">

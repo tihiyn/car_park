@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="car-park-e2e" xmlns="http://www.topografix.com/GPX/1/1">
+  <trk>
+    <name>E2E test trip</name>
+    <trkseg>
+      <trkpt lat="55.7558" lon="37.6173"><time>2024-05-01T10:00:00Z</time></trkpt>
+      <trkpt lat="55.7580" lon="37.6190"><time>2024-05-01T10:05:00Z</time></trkpt>
+      <trkpt lat="55.7600" lon="37.6200"><time>2024-05-01T10:10:00Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

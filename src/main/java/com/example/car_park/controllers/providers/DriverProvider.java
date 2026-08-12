@@ -61,13 +61,16 @@ public class DriverProvider {
     public List<Driver> findAllByIds(User u, Set<Long> ids) {
         List<Driver> all = r.findAllById(ids);
         s.checkAllExists(all, ids);
-        List<Driver> managed = mp.getManagerByUser(u)
+        List<Driver> belongingToManager = mp.getManagerByUser(u)
             .getManagedEnterprises().stream()
             .flatMap(e -> e.getDrivers().stream())
             .filter(d -> ids.contains(d.getId()))
             .toList();
-        s.checkAllBelongs(managed, ids);
-        return managed;
+        s.checkAllBelongs(belongingToManager, ids);
+        // Граф менеджера приходит из UserDetailsService и уже detached, поэтому
+        // возвращаем водителей, загруженных репозиторием: они управляемые, и их
+        // можно менять и связывать с новыми сущностями
+        return all;
     }
 
     public Driver findByIdIn(List<Driver> drivers, Long id) {

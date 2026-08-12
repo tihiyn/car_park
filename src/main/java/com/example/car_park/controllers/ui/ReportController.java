@@ -69,8 +69,7 @@ public class ReportController {
                                            HttpServletResponse r) {
         r.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         r.setHeader("Content-Disposition", "attachment; filename=vehicle_mileage_report.xlsx");
-        Workbook wb = rp.exportVehicleMileageReport(u, vId, p, b, e);
-        try {
+        try (Workbook wb = rp.exportVehicleMileageReport(u, vId, p, b, e)) {
             wb.write(r.getOutputStream());
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -85,8 +84,7 @@ public class ReportController {
                                            HttpServletResponse r) {
         r.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         r.setHeader("Content-Disposition", "attachment; filename=enterprise_production_report.xlsx");
-        Workbook wb = rp.exportProductionYearReport(u, eId, bYear, eYear);
-        try {
+        try (Workbook wb = rp.exportProductionYearReport(u, eId, bYear, eYear)) {
             wb.write(r.getOutputStream());
         } catch (IOException ex) {
             throw new RuntimeException(ex);
@@ -99,8 +97,7 @@ public class ReportController {
                                                 HttpServletResponse r) {
         r.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         r.setHeader("Content-Disposition", "attachment; filename=enterprise_salary_report.xlsx");
-        Workbook wb = rp.exportAverageSalaryReport(u, eId);
-        try {
+        try (Workbook wb = rp.exportAverageSalaryReport(u, eId)) {
             wb.write(r.getOutputStream());
         } catch (IOException ex) {
             throw new RuntimeException(ex);

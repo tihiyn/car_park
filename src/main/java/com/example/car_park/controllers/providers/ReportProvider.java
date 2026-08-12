@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -51,43 +52,34 @@ public class ReportProvider {
         return rs.buildVehicleMileageReport(v, ts, p, s, b);
     }
 
+    // Книгу здесь не закрываем: её ещё предстоит записать в ответ.
+    // Закрытие — на вызывающей стороне, в контроллере
     public Workbook exportVehicleMileageReport(User u, Long vId, Period p, ZonedDateTime s, ZonedDateTime b) {
         VehicleMileageReport r = buildVehicleMileageReport(u, vId, p, s, b);
-        try (Workbook wb = new XSSFWorkbook()) {
-            return rs.fillVehicleMileageReportFile(r, wb);
-        } catch (IOException e) {
-            log.error("Ошибка при формировании отчёта о пробеге: не удалось создать файл", e);
-            throw new RuntimeException(e);
-        }
+        return rs.fillVehicleMileageReportFile(r, new XSSFWorkbook());
     }
 
+    @Transactional(readOnly = true)
     public ProductionYearReport buildProductionYearReport(User u, Long eId, Integer sYear, Integer bYear) {
-        Enterprise e = ep.findById(u, eId);
+        // отчёт обходит e.getVehicles(), поэтому нужна управляемая сущность
+        Enterprise e = ep.findByIdAttached(u, eId);
         return rs.buildProductionYearReport(e, sYear, bYear);
     }
 
     public Workbook exportProductionYearReport(User u, Long eId, Integer sYear, Integer bYear) {
         ProductionYearReport r = buildProductionYearReport(u, eId, sYear, bYear);
-        try (Workbook wb = new XSSFWorkbook()) {
-            return rs.fillProductionYearReportFile(r, wb);
-        } catch (IOException e) {
-            log.error("Ошибка при формировании отчёта о количестве автомобилей по годам производства: не удалось создать файл", e);
-            throw new RuntimeException(e);
-        }
+        return rs.fillProductionYearReportFile(r, new XSSFWorkbook());
     }
 
+    @Transactional(readOnly = true)
     public AverageSalaryReport buildAverageSalaryReport(User u, Long eId) {
-        Enterprise e = ep.findById(u, eId);
+        // отчёт обходит e.getDrivers(), поэтому нужна управляемая сущность
+        Enterprise e = ep.findByIdAttached(u, eId);
         return rs.buildAverageSalaryReport(e);
     }
 
     public Workbook exportAverageSalaryReport(User u, Long eId) {
         AverageSalaryReport r = buildAverageSalaryReport(u, eId);
-        try (Workbook wb = new XSSFWorkbook()) {
-            return rs.fillAverageSalaryReportFile(r, wb);
-        } catch (IOException e) {
-            log.error("Ошибка при формировании отчёта о средней зарплате водителей: не удалось создать файл", e);
-            throw new RuntimeException(e);
-        }
+        return rs.fillAverageSalaryReportFile(r, new XSSFWorkbook());
     }
 }

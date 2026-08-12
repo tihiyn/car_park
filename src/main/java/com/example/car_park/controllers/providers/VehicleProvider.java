@@ -137,21 +137,33 @@ public class VehicleProvider {
         return dp.findAllWithoutActiveVehicle(eId);
     }
 
+    @Transactional
     public void save(User u, VehicleCreateDto dto) {
         Brand b = bp.findById(dto.getBrand().getId());
-        Enterprise e = ep.findById(u, dto.getId());
-        List<Driver> ds = dp.findAllByIds(u, dto.getDrivers().stream()
+        Enterprise e = ep.findById(u, dto.getEnterpriseId());
+        List<Driver> ds = dto.getDrivers() == null ? List.of() : dp.findAllByIds(u, dto.getDrivers().stream()
             .map(VehicleEditDto.DriverEditDto::getId)
             .collect(Collectors.toSet()));
-        Driver ad = ds.stream()
-            .filter(d -> d.getId().equals(dto.getActiveDriver().getId()))
-            .findAny().get();
+        Driver ad = findActiveDriverAmong(ds, dto.getActiveDriver() == null ? null : dto.getActiveDriver().getId());
         Vehicle v = m.createDtoToEntity(dto, b, e, ds, ad);
-        // TODO: проверить, обязательно ли сохранять руками объект в связанные сущности
-        b.getVehicles().add(v);
-        ds.forEach(d -> d.getVehicles().add(v));
-        ad.setActiveVehicle(v);
+        // Обратные стороны связей (Brand.vehicles, Driver.vehicles, Driver.activeVehicle)
+        // руками проставлять не нужно: владелец всех трёх связей — Vehicle
         r.save(v);
+    }
+
+    private Driver findActiveDriverAmong(List<Driver> ds, Long activeDriverId) {
+        if (activeDriverId == null) {
+            return null;
+        }
+        return ds.stream()
+            .filter(d -> d.getId().equals(activeDriverId))
+            .findAny()
+            .orElseThrow(() -> {
+                log.error("Активный водитель с id={} не принадлежит списку назначенных водителей",
+                    activeDriverId);
+                return new ResponseStatusException(BAD_REQUEST,
+                    "Активный водитель должен быть из списка назначенных водителей");
+            });
     }
 
     @Transactional
@@ -167,26 +179,24 @@ public class VehicleProvider {
                 "Активный водитель должен быть из списка назначенных водителей");
         }
         // TODO: проверить, что будет если назначить водителя, который активен на другой машине
-        Driver ad = ds.stream()
-            .filter(d -> d.getId().equals(dto.getActiveDriverId()))
-            .findAny().get();
+        Driver ad = findActiveDriverAmong(ds, dto.getActiveDriverId());
         Vehicle v = m.vehicleRequestDtoToVehicle(dto, b, e, ds, ad);
-        // TODO: проверить, обязательно ли сохранять руками объект в связанные сущности
-        b.getVehicles().add(v);
-        ds.forEach(d -> d.getVehicles().add(v));
-        ad.setActiveVehicle(v);
+        // Обратные стороны связей проставляются владельцем — самим Vehicle
         return r.save(v).getId();
     }
 
     @Transactional
     public void update(User u, VehicleEditDto dto) {
-        Vehicle existing = findById(u, dto.getId());
+        // проверяем права, но работаем с управляемой сущностью: findById отдаёт
+        // ТС из кэша, у него ленивые связи уже отвязаны от сессии
+        findById(u, dto.getId());
+        Vehicle existing = findByIdAttached(dto.getId());
         m.editDtoToEntity(dto, existing);
         if (!existing.getBrand().getId().equals(dto.getBrand().getId())) {
             Brand b = bp.findById(dto.getBrand().getId());
             existing.setBrand(b);
         }
-        Set<Long> updDriverIds = dto.getDrivers().stream()
+        Set<Long> updDriverIds = dto.getDrivers() == null ? Set.of() : dto.getDrivers().stream()
             .map(VehicleEditDto.DriverEditDto::getId)
             .collect(Collectors.toSet());
         if (!existing.getDrivers().stream()
@@ -195,8 +205,12 @@ public class VehicleProvider {
             List<Driver> updDrivers = dp.findAllByIds(u, updDriverIds);
             existing.setDrivers(updDrivers);
         }
-        if (!existing.getActiveDriver().getId().equals(dto.getActiveDriver().getId())) {
-            existing.setActiveDriver(dp.findByIdIn(existing.getDrivers(), dto.getActiveDriver().getId()));
+        Long existingActiveDriverId = existing.getActiveDriver() == null ? null : existing.getActiveDriver().getId();
+        Long updActiveDriverId = dto.getActiveDriver() == null ? null : dto.getActiveDriver().getId();
+        if (!Objects.equals(existingActiveDriverId, updActiveDriverId)) {
+            existing.setActiveDriver(updActiveDriverId == null
+                ? null
+                : dp.findByIdIn(existing.getDrivers(), updActiveDriverId));
         }
         cr.update(existing);
     }
@@ -238,13 +252,19 @@ public class VehicleProvider {
         return m.vehicleToVehicleResponseDto(cr.update(existing));
     }
 
+    @Transactional
     public void delete(User u, Long id) {
-        Vehicle v = findById(u, id);
-        // TODO: проверить, обязательно ли удалять авто из связанных сущностей
-        v.getBrand().getVehicles().remove(v);
-        v.getEnterprise().getVehicles().remove(v);
+        findById(u, id);
+        Vehicle v = findByIdAttached(id);
+        // Снимаем связи с обеих сторон: владелец — Vehicle, но пока в сессии висит
+        // Driver.activeVehicle, указывающий на удаляемую машину, flush падает
+        Driver ad = v.getActiveDriver();
+        if (ad != null) {
+            ad.setActiveVehicle(null);
+            v.setActiveDriver(null);
+        }
         v.getDrivers().forEach(d -> d.getVehicles().remove(v));
-        v.getActiveDriver().setActiveVehicle(null);
+        v.getDrivers().clear();
         cr.delete(v);
     }
 }

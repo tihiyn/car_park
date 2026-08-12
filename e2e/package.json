@@ -1,0 +1,13 @@
+{
+  "name": "car-park-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E-тесты car_park на Cypress",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run"
+  },
+  "devDependencies": {
+    "cypress": "^15.0.0"
+  }
+}
