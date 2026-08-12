@@ -1,5 +1,5 @@
 describe('Отчёты', () => {
-  const vehicleWithTrips = { id: '14842', regNum: 'A083AE' };
+  const vehicleWithTrips = { id: '1', regNum: 'A083AE' };
   const enterpriseId = '1';
 
   const assertExportedFile = (fileName) => {

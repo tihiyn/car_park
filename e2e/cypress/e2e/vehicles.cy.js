@@ -1,5 +1,5 @@
 describe('Транспортные средства', () => {
-  const foreignVehicleId = 20020;
+  const foreignVehicleId = 11;
 
   beforeEach(() => {
     cy.login();

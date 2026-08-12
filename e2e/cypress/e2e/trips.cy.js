@@ -1,5 +1,5 @@
 describe('Поездки', () => {
-  const vehicleWithTrips = '14842';
+  const vehicleWithTrips = '1';
 
   beforeEach(() => {
     cy.login();
@@ -16,7 +16,7 @@ describe('Поездки', () => {
       cy.get('#fromDate').type('2023-01-01T00:00');
       cy.get('#toDate').type('2026-01-01T00:00');
       cy.get('#loadTrips').click();
-      cy.wait('@loadTrips', { timeout: 120000 });
+      cy.wait('@loadTrips');
 
       cy.get('#trips .list-group-item').should('have.length.at.least', 1);
       cy.get('#trips').should('contain', 'Начало:').and('contain', 'Конец:');
@@ -53,7 +53,7 @@ describe('Поездки', () => {
       cy.get('#tripFile').selectFile('cypress/fixtures/trip.gpx');
       cy.get('#uploadTripForm button[type="submit"]').click();
 
-      cy.get('#uploadStatus', { timeout: 90000 })
+      cy.get('#uploadStatus')
         .should('contain', 'Файл успешно загружен')
         .and('have.class', 'text-success');
 
@@ -61,7 +61,7 @@ describe('Поездки', () => {
       cy.get('#fromDate').type('2024-01-01T00:00');
       cy.get('#toDate').type('2024-12-31T00:00');
       cy.get('#loadTrips').click();
-      cy.wait('@loadTrips', { timeout: 120000 });
+      cy.wait('@loadTrips');
 
       cy.get('#trips .list-group-item').should('have.length', 1);
     });
