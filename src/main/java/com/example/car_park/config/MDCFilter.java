@@ -28,7 +28,7 @@ public class MDCFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } finally {
-            MDC.clear();
+            MDC.remove("user");
         }
     }
 
