@@ -10,7 +10,7 @@
     </appender>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{dd-MM-yyy HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) %logger{36} - %msg%n</pattern>
+            <pattern>%d{dd-MM-yyyy HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) [%X{traceId:-},%X{spanId:-}] %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 

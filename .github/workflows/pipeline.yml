@@ -39,5 +39,6 @@ jobs:
             git pull origin main &&
             docker compose build backend-1 &&
             docker compose up -d backend-1 &&
+            docker compose up -d prometheus otel-collector tempo grafana &&
             docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload &&
             docker image prune -f

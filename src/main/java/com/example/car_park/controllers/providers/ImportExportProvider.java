@@ -3,6 +3,7 @@ package com.example.car_park.controllers.providers;
 import com.example.car_park.controllers.dto.response.ExportResp;
 import com.example.car_park.controllers.dto.response.ImportResp;
 import com.example.car_park.service.ImportExportService;
+import io.micrometer.core.annotation.Timed;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
@@ -54,6 +55,7 @@ public class ImportExportProvider {
 
     private static final String TMP_DIR = System.getProperty("java.io.tmpdir") + "/batch-exports/";
 
+    @Timed(value = "car_park.export", description = "Выгрузка данных предприятия батч-джобой", extraTags = {"operation", "export"})
     public ExportResp exportData(Long eId, ZonedDateTime s, ZonedDateTime b, String format) {
         try {
             Files.createDirectories(Paths.get(TMP_DIR));
@@ -92,6 +94,7 @@ public class ImportExportProvider {
         }
     }
 
+    @Timed(value = "car_park.import", description = "Загрузка данных батч-джобой", extraTags = {"operation", "import"})
     public ImportResp importData(String format, MultipartFile file) {
         if (file.isEmpty()) {
             return new ImportResp(false, "Файл пуст");
