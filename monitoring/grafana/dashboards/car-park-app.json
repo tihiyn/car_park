@@ -37,7 +37,7 @@
     {
       "id": 2,
       "type": "timeseries",
-      "title": "Запросов в секунду по эндпоинтам",
+      "title": "RPS по эндпоинтам",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
       "fieldConfig": {
@@ -88,7 +88,7 @@
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Ответы по статусам",
+      "title": "RPS по статусам",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
       "fieldConfig": {
@@ -108,7 +108,7 @@
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Латентность HTTP (p95 по эндпоинтам, p99 общий) — с exemplars",
+      "title": "Латентность эндпоинтов (p95 по эндпоинтам, p99 общий)",
       "description": "Ромбовидные маркеры — exemplars. Клик по маркеру открывает конкретный трейс в Tempo.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 9, "w": 24, "x": 0, "y": 9 },
@@ -137,7 +137,7 @@
     {
       "id": 10,
       "type": "row",
-      "title": "JVM и процесс",
+      "title": "JVM",
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
       "panels": []
@@ -344,7 +344,7 @@
     {
       "id": 31,
       "type": "stat",
-      "title": "Размер парка",
+      "title": "Размер автопарка",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 37 },
       "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
@@ -378,7 +378,7 @@
     {
       "id": 32,
       "type": "timeseries",
-      "title": "Обращения к Geoapify (промахи кэша)",
+      "title": "Обращения к Geoapify (cache missing)",
       "description": "Метод под @Cacheable, поэтому таймер считает только реальные внешние вызовы",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 37 },
@@ -399,7 +399,7 @@
     {
       "id": 33,
       "type": "timeseries",
-      "title": "Латентность Geoapify и батч-джоб",
+      "title": "Латентность Geoapify",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 37 },
       "fieldConfig": {
