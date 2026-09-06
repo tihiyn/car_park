@@ -13,7 +13,7 @@ scrape_configs:
   - job_name: car_park_bot
     metrics_path: /actuator/prometheus
     static_configs:
-      - targets: ["car_park_bot:8090"]
+      - targets: ["car-park-bot:8090"]
         labels:
           application: car_park_bot
 
