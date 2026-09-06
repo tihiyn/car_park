@@ -8,7 +8,7 @@ contactPoints:
         type: webhook
         disableResolveMessage: false
         settings:
-          url: http://car_park_bot:8090/bot/alerts
+          url: http://car-park-bot:8090/bot/alerts
           httpMethod: POST
           maxAlerts: 10
           # custom headers в Grafana 11.4 ещё нет, поэтому общий секрет едет через Bearer
@@ -28,7 +28,7 @@ contactPoints:
         type: webhook
         disableResolveMessage: false
         settings:
-          url: http://car_park_bot:8090/bot/alerts
+          url: http://car-park-bot:8090/bot/alerts
           httpMethod: POST
           maxAlerts: 10
           authorization_scheme: Bearer
