@@ -1,0 +1,166 @@
+{
+  "uid": "car-park-logs",
+  "title": "car_park — логи",
+  "tags": ["car_park", "logs"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "id": 100,
+      "title": "Postgres",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 101,
+      "title": "Строки логов Postgres по severity",
+      "description": "WARNING сознательно не имеет алерта: в JPA-приложении это педантизм SQL-стандарта и бухгалтерия autovacuum, которые не коррелируют с влиянием на пользователя. Смотреть их нужно здесь, по требованию.",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 70 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "PANIC" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] },
+          { "matcher": { "id": "byName", "options": "FATAL" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "ERROR" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "WARNING" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "LOG" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+        ]
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "sum by (pg_severity) (count_over_time({compose_service=\"db\"}[$__auto]))",
+          "legendFormat": "{{pg_severity}}"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "id": 102,
+      "title": "Ошибки Postgres за период",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "options": { "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false }, "colorMode": "value" },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "sum by (pg_severity) (count_over_time({compose_service=\"db\"} | pg_severity=~\"ERROR|FATAL|PANIC\" [$__auto]))",
+          "legendFormat": "{{pg_severity}}"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "id": 103,
+      "title": "Логи Postgres: WARNING и выше",
+      "description": "Рядом с каждым ERROR идёт строка STATEMENT: с уронившим его SQL (log_min_error_statement=error).",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 11, "w": 24, "x": 0, "y": 9 },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "{compose_service=\"db\"} |~ `(WARNING|ERROR|FATAL|PANIC|STATEMENT):`"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "id": 200,
+      "title": "HTTP и межсервисное взаимодействие",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 20 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 201,
+      "title": "Ответы nginx по статусам",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 21 },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "bars", "stacking": { "mode": "normal" }, "fillOpacity": 70 } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "sum by (status) (count_over_time({job=\"nginx\", stream=\"access\"} | json [$__auto]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "id": 202,
+      "title": "Ошибки на хопе car_park_bot → car_park",
+      "description": "Запросы бота отделяются от браузерных по User-Agent. По статусу этот хоп не отследить: /auth/login это ещё и браузерная форма, а неверный пароль отдаёт 302, а не 4xx.",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 21 },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "bars", "fillOpacity": 70 } },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "sum by (status) (count_over_time({job=\"nginx\", stream=\"access\"} | json | http_user_agent =~ `car_park_bot/.*` | status >= 400 [$__auto]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "id": 203,
+      "title": "Логи приложения: WARN и ERROR",
+      "description": "В каждой строке есть traceId — по нему можно провалиться в Tempo (derived field TraceID у датасорса Loki).",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 11, "w": 24, "x": 0, "y": 29 },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "enableLogDetails": true },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "code",
+          "queryType": "range",
+          "expr": "{job=\"car_park_app\", level=~\"WARN|ERROR\"}"
+        }
+      ]
+    }
+  ]
+}

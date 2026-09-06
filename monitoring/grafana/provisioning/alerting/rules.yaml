@@ -1,0 +1,1013 @@
+apiVersion: 1
+
+groups:
+  # ────────────────────────────────────────────────────────────────────────────
+  - orgId: 1
+    name: car_park_availability
+    folder: car_park
+    interval: 30s
+    rules:
+      - uid: cp-target-down
+        title: "Сервис не отвечает на скрейп"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'min by (job) (up{job=~"car_park|car_park_bot"})'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B < 1'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 2m
+        labels:
+          severity: critical
+          service: car_park
+          class: availability
+        annotations:
+          summary: "Prometheus не может собрать метрики с {{ $labels.job }}"
+          description: "Таргет недоступен больше двух минут (8 пропущенных скрейпов, то есть это не рестарт при деплое)."
+          runbook: "docker compose ps; docker compose logs --tail=100 backend-1; для бота — cd ~/car_park_bot && docker compose logs --tail=100 car_park_bot"
+
+      - uid: cp-observability-down
+        title: "Стек наблюдаемости частично лежит"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'min by (job) (up{job=~"loki|promtail|prometheus|otel-collector|grafana"})'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B < 1'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        labels:
+          severity: warning
+          service: observability
+          class: availability
+        annotations:
+          summary: "Компонент наблюдаемости {{ $labels.job }} недоступен"
+          description: "Пользователи ничего не замечают, но если лежит loki или promtail, то все правила по логам Postgres слепнут."
+          runbook: "docker compose ps; docker compose logs --tail=100 {{ $labels.job }}"
+
+      # Dead-man's switch. Одно письмо в сутки доказывает, что жива вся цепочка
+      # «оценка правила → политика → SMTP». Если писем нет — мёртв сам алертинг.
+      - uid: cp-watchdog
+        title: "Watchdog"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'vector(1)'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 0s
+        labels:
+          severity: info
+          service: observability
+          class: availability
+        annotations:
+          summary: "Алертинг жив"
+          description: "Это уведомление приходит раз в сутки намеренно. Его отсутствие означает, что сломан сам алертинг: правила, политики или SMTP."
+
+  - orgId: 1
+    name: car_park_errors
+    folder: car_park
+    interval: 1m
+    rules:
+      - uid: cp-interservice-4xx
+        title: "car_park_bot получил 4xx от car_park"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({job="nginx", stream="access"} | json | http_user_agent =~ `car_park_bot/.*` | status >= 400 | status < 500 [10m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        labels:
+          severity: warning
+          service: car_park_bot
+          class: error_rate
+        annotations:
+          summary: "Между сервисами прошло {{ $values.B }} ответов 4xx за 10 минут"
+          description: "Обе стороны под нашим контролем, поэтому любая 4xx здесь — сломанный контракт, а не поведение пользователя."
+          runbook: "Explore → Loki: {job=\"nginx\", stream=\"access\"} | json | http_user_agent =~ `car_park_bot/.*` | status >= 400 — посмотреть uri и status."
+
+      - uid: cp-5xx-rate
+        title: "Доля 5xx выше 5%"
+        condition: E
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'sum(rate(http_server_requests_seconds_count{application="car_park", status=~"5.."}[5m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: B
+              editorMode: code
+              expr: 'sum(rate(http_server_requests_seconds_count{application="car_park"}[5m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: D
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: D
+              type: reduce
+              reducer: last
+              expression: B
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: E
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: E
+              type: math
+              expression: '($C / $D > 0.05) && ($C > 0.05) && ($D > 0.2)'
+              datasource: {type: __expr__, uid: __expr__}
+        dashboardUid: car-park-app
+        panelId: 3
+        noDataState: OK
+        execErrState: Alerting
+        for: 5m
+        labels:
+          severity: critical
+          service: car_park
+          class: error_rate
+        annotations:
+          summary: "Доля 5xx у car_park превысила 5%"
+          description: "5xx: {{ $values.C }} rps при общем трафике {{ $values.D }} rps (окно 5 минут)."
+          runbook: "Дашборд «car_park — приложение» → панель «Доля 5xx»; затем Explore → Tempo за тот же интервал; затем Explore → Loki {job=\"car_park_app\", level=\"ERROR\"}."
+
+      - uid: cp-5xx-any
+        title: "Появились единичные 5xx"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'sum(increase(http_server_requests_seconds_count{application="car_park", status=~"5.."}[30m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 0s
+        labels:
+          severity: info
+          service: car_park
+          class: error_rate
+        annotations:
+          summary: "За 30 минут произошло {{ $values.B }} ответов 5xx"
+          description: "Одна 500 — это баг, который стоит посмотреть завтра. Разбираться ночью не нужно: если станет системно, сработает правило «Доля 5xx выше 5%»."
+
+      - uid: cp-404-scanning
+        title: "Похоже на скан несуществующих путей"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'sum(rate(http_server_requests_seconds_count{application="car_park", status="404", uri="NOT_FOUND"}[5m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 1'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: warning
+          service: car_park
+          class: error_rate
+        annotations:
+          summary: "{{ $values.B }} rps запросов к несуществующим путям"
+          description: "Больше 1 rps в течение 10 минут — это устойчивый скан, а не случайная битая ссылка."
+          runbook: "Explore → Loki: {job=\"nginx\", stream=\"access\"} | json | status = 404 — посмотреть remote_addr и http_user_agent, при необходимости забанить на nginx."
+
+      - uid: cp-404-application
+        title: "Устойчивый поток прикладных 404"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'sum by (uri) (rate(http_server_requests_seconds_count{application="car_park", status="404", uri!="NOT_FOUND"}[10m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0.1'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 15m
+        labels:
+          severity: info
+          service: car_park
+          class: error_rate
+        annotations:
+          summary: "{{ $labels.uri }} стабильно отдаёт 404 ({{ $values.B }} rps)"
+          description: "Handler нашёлся, а сущности нет — например, бот спрашивает неизвестный regNum. Ручеёк это норма, поток означает, что у вызывающего устаревший список идентификаторов."
+
+      - uid: cp-400-spike
+        title: "Всплеск ответов 400"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'sum by (uri) (rate(http_server_requests_seconds_count{application="car_park", status="400"}[10m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0.1'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: warning
+          service: car_park
+          class: error_rate
+        annotations:
+          summary: "{{ $labels.uri }} отдаёт 400 со скоростью {{ $values.B }} rps"
+          description: "В вызове между сервисами 400 — это всегда слом контракта, а не ошибка пользователя. ReportRestController документирует 400 на неизвестный period."
+          runbook: "Explore → Loki {job=\"car_park_app\", level=\"WARN\"} за тот же интервал; сверить параметры запроса с OpenAPI-спецификацией."
+
+  - orgId: 1
+    name: car_park_latency
+    folder: car_park
+    interval: 1m
+    rules:
+      - uid: cp-latency-baseline
+        title: "p95 втрое выше базовой линии"
+        condition: G
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application="car_park", uri!="NOT_FOUND"}[10m])))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 90000, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: B
+              editorMode: code
+              expr: 'histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application="car_park", uri!="NOT_FOUND"}[1h] offset 1d)))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: C
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: C
+              editorMode: code
+              expr: 'sum(rate(http_server_requests_seconds_count{application="car_park"}[10m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: D
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: D
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: E
+            relativeTimeRange: {from: 90000, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: E
+              type: reduce
+              reducer: last
+              expression: B
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: F
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: F
+              type: reduce
+              reducer: last
+              expression: C
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: G
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: G
+              type: math
+              expression: '($D > 0.5) && ($E > 0) && ($D > 3 * $E) && ($F > 0.2)'
+              datasource: {type: __expr__, uid: __expr__}
+        dashboardUid: car-park-app
+        panelId: 5
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: warning
+          service: car_park
+          class: latency
+        annotations:
+          summary: "p95 = {{ $values.D }} c при базовой {{ $values.E }} c"
+          description: "Держится больше 10 минут, то есть это не прогрев JIT и пула после деплоя. Правило молчит первые сутки после потери данных Prometheus — на этот случай есть абсолютный порог «p95 выше 2 секунд»."
+          runbook: "Дашборд → панель «Латентность эндпоинтов», кликнуть по exemplar и провалиться в трейс; затем Explore → Loki {compose_service=\"db\"} |= `duration:` — медленные запросы Postgres (log_min_duration_statement=1000)."
+
+      # Абсолютный порог: работает с первого дня, переживает потерю данных Prometheus.
+      # 2 с — верхний сконфигурированный SLO-бакет, то есть измеряется точно.
+      - uid: cp-latency-severe
+        title: "p95 выше 2 секунд"
+        condition: E
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{application="car_park", uri!="NOT_FOUND"}[10m])))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: B
+              editorMode: code
+              expr: 'sum(rate(http_server_requests_seconds_count{application="car_park"}[10m]))'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: C
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: D
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: D
+              type: reduce
+              reducer: last
+              expression: B
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: E
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: E
+              type: math
+              expression: '($C > 2) && ($D > 0.2)'
+              datasource: {type: __expr__, uid: __expr__}
+        dashboardUid: car-park-app
+        panelId: 5
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: critical
+          service: car_park
+          class: latency
+        annotations:
+          summary: "p95 = {{ $values.C }} c при трафике {{ $values.D }} rps"
+          description: "Каждый двадцатый запрос дольше двух секунд — пользователи это уже видят."
+          runbook: "Дашборд → «Латентность эндпоинтов» и «Пул соединений»; Explore → Tempo за тот же интервал; Explore → Loki {compose_service=\"db\"}."
+
+      # Пост говорит: скачок p95 значит, что БД вот-вот рухнет. Очередь за соединением —
+      # то же событие на шаг раньше и без статистического сглаживания.
+      - uid: cp-hikari-exhausted
+        title: "Пул соединений к БД исчерпан"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              editorMode: code
+              expr: 'max(hikaricp_connections_pending{application="car_park"})'
+              instant: true
+              range: false
+              intervalMs: 15000
+              maxDataPoints: 43200
+              datasource: {type: prometheus, uid: prometheus}
+          - refId: B
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        dashboardUid: car-park-app
+        panelId: 21
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: critical
+          service: car_park
+          class: latency
+        annotations:
+          summary: "{{ $values.B }} потоков стоят в очереди за соединением к БД"
+          description: "Пять минут подряд потоки ждут соединение. Это опережающий индикатор: правила по p95 сработают следом."
+          runbook: "Дашборд → «Пул HikariCP»; Explore → Loki {compose_service=\"db\"} — искать долгие запросы и блокировки (log_lock_waits=on)."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Класс 1: SQL-ошибки Postgres
+  - orgId: 1
+    name: postgres_logs
+    folder: car_park
+    interval: 1m
+    rules:
+      # PANIC означает, что Postgres аварийно оборвал все сессии и перезапускается.
+      # Порогов тут нет и ждать нечего.
+      - uid: pg-panic
+        title: "Postgres: PANIC в логах"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"} | pg_severity="PANIC" [5m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        labels:
+          severity: critical
+          service: postgres
+          class: sql
+        annotations:
+          summary: "Postgres записал {{ $values.B }} строк уровня PANIC"
+          description: "База аварийно завершила работу и перезапускается. Все открытые сессии оборваны."
+          runbook: "docker compose logs --tail=200 db; Explore → Loki {compose_service=\"db\"} | pg_severity=\"PANIC\"; проверить место на диске (df -h) и память."
+
+      # Считать критичным ЛЮБОЙ FATAL — ошибка: Postgres пишет FATAL на рутинные вещи
+      # (password authentication failed, the database system is starting up — на каждый
+      # рестарт контейнера). Такое правило будило бы на каждый деплой, и через неделю
+      # алертинг бы просто выключили. Regex оставляет только «база действительно падает».
+      # Всё остальное ловит правило ниже, но только когда становится закономерностью.
+      - uid: pg-fatal-critical
+        title: "Postgres: FATAL, база отказывает"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"} | pg_severity="FATAL" |~ `(?i)(too many clients|remaining connection slots|out of memory|the database system is in recovery mode|no space left on device|could not write|could not fsync|could not extend file)` [5m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: Alerting
+        for: 0s
+        labels:
+          severity: critical
+          service: postgres
+          class: sql
+        annotations:
+          summary: "Postgres: {{ $values.B }} FATAL про исчерпание ресурсов"
+          description: "Кончились слоты соединений, память или место на диске, либо база в аварийном восстановлении."
+          runbook: "Explore → Loki {compose_service=\"db\"} | pg_severity=\"FATAL\"; df -h; дашборд → «Пул HikariCP»; docker compose logs --tail=200 db."
+
+      - uid: pg-fatal-rate
+        title: "Postgres: частые FATAL"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"} | pg_severity="FATAL" [15m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 5'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+          class: sql
+        annotations:
+          summary: "{{ $values.B }} строк FATAL за 15 минут"
+          description: "Единичный FATAL — норма (рестарт контейнера, разрыв соединения). Пять за 15 минут — это либо неудачная ротация учётных данных, либо перебор паролей: порт 6432 опубликован наружу."
+          runbook: "Explore → Loki {compose_service=\"db\"} | pg_severity=\"FATAL\" — посмотреть текст и источник."
+
+      # Здоровое JPA-приложение даёт ноль Postgres ERROR в стабильном состоянии.
+      # Благодаря log_min_error_statement=error виноватый SQL лежит строкой ниже в Loki.
+      - uid: pg-error-rate
+        title: "Postgres: поток SQL-ошибок"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"} | pg_severity="ERROR" [10m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 900, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 10'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+          class: sql
+        annotations:
+          summary: "{{ $values.B }} ошибок Postgres за 10 минут"
+          description: "Десять ошибок за десять минут — это уже систематика, а не случайность: нарушение констрейнтов, сломанная миграция или расхождение схемы."
+          runbook: "Explore → Loki {compose_service=\"db\"} | pg_severity=\"ERROR\" — строкой ниже каждой ошибки лежит уронивший её SQL (STATEMENT:)."
+
+      - uid: pg-error-any
+        title: "Postgres: есть SQL-ошибки"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"} | pg_severity="ERROR" [30m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 10m
+        labels:
+          severity: info
+          service: postgres
+          class: sql
+        annotations:
+          summary: "За 30 минут Postgres записал {{ $values.B }} ошибок"
+          description: "Разбираться утром. Если поток станет плотным, сработает «Postgres: поток SQL-ошибок»."
+
+      # Страж самого сбора логов: с log_checkpoints=on Postgres пишет минимум одну строку
+      # за checkpoint_timeout (5 минут). Полная тишина полчаса означает, что либо базы нет,
+      # либо — что коварнее — promtail перестал её находить после пересоздания контейнера.
+      # Без этого правила все правила выше отказывают молча.
+      - uid: pg-log-silence
+        title: "Postgres: логи перестали поступать"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({compose_service="db"}[30m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: replaceNN, replaceWithValue: 0}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 1800, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B < 1'
+              datasource: {type: __expr__, uid: __expr__}
+        # отсутствие данных здесь и есть сигнал, поэтому Alerting, а не OK
+        noDataState: Alerting
+        execErrState: Alerting
+        for: 10m
+        labels:
+          severity: warning
+          service: postgres
+          class: sql
+        annotations:
+          summary: "За 30 минут от Postgres не пришло ни одной строки лога"
+          description: "Все правила по SQL-ошибкам сейчас слепы. Скорее всего promtail потерял контейнер db после пересоздания."
+          runbook: "docker compose logs --tail=50 promtail; docker compose restart promtail; проверить {compose_service=\"db\"} в Explore → Loki."
+
+  # ────────────────────────────────────────────────────────────────────────────
+  - orgId: 1
+    name: alerting_selftest
+    folder: car_park
+    interval: 1m
+    rules:
+      # Постоянная безопасная проверка КРИТИЧЕСКОГО маршрута целиком:
+      # Loki → правило → политика → вебхук в Telegram → SMTP → почта.
+      # Вызвать настоящий PANIC нельзя, а это — всегда:
+      #   docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" \
+      #     -c 'select 1 from "ALERT_DRILL_check_the_pager";'
+      - uid: cp-alert-drill
+        title: "Учебная тревога"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: loki
+            model:
+              refId: A
+              editorMode: code
+              queryType: instant
+              expr: 'sum(count_over_time({job=~".+"} |= `ALERT_DRILL` [5m]))'
+              intervalMs: 60000
+              maxDataPoints: 100
+              datasource: {type: loki, uid: loki}
+          - refId: B
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+              settings: {mode: dropNN}
+              datasource: {type: __expr__, uid: __expr__}
+          - refId: C
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: '$B > 0'
+              datasource: {type: __expr__, uid: __expr__}
+        noDataState: OK
+        execErrState: OK
+        for: 0s
+        labels:
+          severity: critical
+          service: observability
+          class: availability
+        annotations:
+          summary: "Учебная тревога прошла по критическому маршруту"
+          description: "Это не инцидент. Уведомление означает, что цепочка Loki → правило → политика → Telegram и почта работает целиком."

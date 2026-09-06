@@ -28,3 +28,19 @@ datasources:
         datasourceUid: prometheus
       tracesToMetrics:
         datasourceUid: prometheus
+
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      maxLines: 1000
+      timeout: 60
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"traceId":"([0-9a-f]+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+          urlDisplayLabel: "Открыть трейс"

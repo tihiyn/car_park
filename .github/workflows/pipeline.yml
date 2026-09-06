@@ -39,6 +39,8 @@ jobs:
             git pull origin main &&
             docker compose build backend-1 &&
             docker compose up -d backend-1 &&
-            docker compose up -d prometheus otel-collector tempo grafana &&
+            docker compose up -d db prometheus otel-collector tempo loki promtail grafana &&
+            docker compose restart promtail grafana &&
+            curl -sS -X POST http://127.0.0.1:9090/-/reload &&
             docker compose exec nginx nginx -t && docker compose exec nginx nginx -s reload &&
             docker image prune -f
