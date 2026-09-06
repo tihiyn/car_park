@@ -64,6 +64,7 @@ services:
       - "deadlock_timeout=1s"
       - "-c"
       - "log_min_duration_statement=1000"
+      - "-c"
       - "log_timezone=UTC"
     environment:
       POSTGRES_DB: ${DB_NAME}
