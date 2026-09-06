@@ -40,7 +40,31 @@ services:
 
   db:
     image: postgis/postgis:17-master
-    command: ["postgres", "-c", "synchronous_commit=off"]
+    command:
+      - "postgres"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "log_destination=stderr"
+      - "-c"
+      - "logging_collector=off"
+      - "-c"
+      - "log_line_prefix=%m [%p] %q%u@%d "
+      - "-c"
+      - "log_min_messages=warning"
+      - "-c"
+      - "log_min_error_statement=error"
+      - "-c"
+      - "log_error_verbosity=default"
+      - "-c"
+      - "log_checkpoints=on"
+      - "-c"
+      - "log_lock_waits=on"
+      - "-c"
+      - "deadlock_timeout=1s"
+      - "-c"
+      - "log_min_duration_statement=1000"
+      - "log_timezone=UTC"
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -75,7 +99,7 @@ services:
   k6:
     image: grafana/k6:latest
     volumes:
-      - ./loadtest:/scripts:ro
+      - ./k6:/scripts:ro
     working_dir: /scripts
     entrypoint: [ "k6" ]
     environment:
@@ -172,15 +196,56 @@ services:
     networks:
       - app-network
 
+  loki:
+    image: grafana/loki:3.3.2
+    command: ["-config.file=/etc/loki/loki.yaml"]
+    user: "0"
+    volumes:
+      - ./monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - loki-data:/loki
+    expose:
+      - "3100"
+    networks:
+      - app-network
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    command: ["-config.file=/etc/promtail/promtail.yaml"]
+    user: "0"
+    depends_on:
+      - loki
+    volumes:
+      - ./monitoring/promtail/promtail.yaml:/etc/promtail/promtail.yaml:ro
+      - promtail-data:/var/lib/promtail
+      - ~/logs/car_park:/var/log/car_park:ro
+      - ~/logs/nginx:/var/log/nginx:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    expose:
+      - "9080"
+    networks:
+      - app-network
+
   grafana:
     image: grafana/grafana:11.4.0
     depends_on:
       - prometheus
       - tempo
+      - loki
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com:587}
+      GF_SMTP_USER: ${SMTP_USER}
+      GF_SMTP_PASSWORD: ${SMTP_PASSWORD}
+      GF_SMTP_FROM_ADDRESS: ${SMTP_USER}
+      GF_SMTP_FROM_NAME: "car_park Grafana"
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
+      GF_SMTP_SKIP_VERIFY: "false"
+      ALERT_EMAIL: ${ALERT_EMAIL:-tihiyn58067@gmail.com}
+      ALERTS_WEBHOOK_TOKEN: ${ALERTS_WEBHOOK_TOKEN}
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -196,6 +261,8 @@ volumes:
   prometheus-data:
   tempo-data:
   grafana-data:
+  loki-data:
+  promtail-data:
 
 networks:
   app-network:

@@ -1,0 +1,57 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: critical
+    receivers:
+      - uid: cp-crit-telegram
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://car_park_bot:8090/bot/alerts
+          httpMethod: POST
+          maxAlerts: 10
+          # custom headers в Grafana 11.4 ещё нет, поэтому общий секрет едет через Bearer
+          authorization_scheme: Bearer
+          authorization_credentials: $ALERTS_WEBHOOK_TOKEN
+      - uid: cp-crit-email
+        type: email
+        disableResolveMessage: false
+        settings:
+          addresses: $ALERT_EMAIL
+          singleEmail: false
+
+  - orgId: 1
+    name: warning
+    receivers:
+      - uid: cp-warn-telegram
+        type: webhook
+        disableResolveMessage: false
+        settings:
+          url: http://car_park_bot:8090/bot/alerts
+          httpMethod: POST
+          maxAlerts: 10
+          authorization_scheme: Bearer
+          authorization_credentials: $ALERTS_WEBHOOK_TOKEN
+
+  # info-уведомления не должны попадать в Telegram: этот канал общий с critical,
+  # и поток «посмотрим завтра» приучил бы его игнорировать.
+  - orgId: 1
+    name: info
+    receivers:
+      - uid: cp-info-email
+        type: email
+        disableResolveMessage: true
+        settings:
+          addresses: $ALERT_EMAIL
+
+  # dead-man's switch: одно письмо в сутки доказывает, что цепочка
+  # «оценка правила → политика → SMTP» жива. Если писем нет — мёртв сам алертинг.
+  - orgId: 1
+    name: heartbeat
+    receivers:
+      - uid: cp-heartbeat-email
+        type: email
+        disableResolveMessage: true
+        settings:
+          addresses: $ALERT_EMAIL
