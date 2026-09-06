@@ -859,9 +859,7 @@ groups:
           service: postgres
           class: sql
         annotations:
-          summary: "{{ $values.B }} ошибок Postgres за 10 минут"
-          description: "Десять ошибок за десять минут — это уже систематика, а не случайность: нарушение констрейнтов, сломанная миграция или расхождение схемы."
-          runbook: "Explore → Loki {compose_service=\"db\"} | pg_severity=\"ERROR\" — строкой ниже каждой ошибки лежит уронивший её SQL (STATEMENT:)."
+          summary: "{{ $values.B }} SQL ошибок за 10 минут"
 
       - uid: pg-error-any
         title: "Postgres: есть SQL-ошибки"
@@ -905,7 +903,7 @@ groups:
           class: sql
         annotations:
           summary: "За 30 минут Postgres записал {{ $values.B }} ошибок"
-          description: "Разбираться утром. Если поток станет плотным, сработает «Postgres: поток SQL-ошибок»."
+          description: "Есть SQL ошибки за последние 30 минут."
 
       # Страж самого сбора логов: с log_checkpoints=on Postgres пишет минимум одну строку
       # за checkpoint_timeout (5 минут). Полная тишина полчаса означает, что либо базы нет,
