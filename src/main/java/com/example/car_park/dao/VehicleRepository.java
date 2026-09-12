@@ -32,10 +32,6 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
 
     Optional<Vehicle> findByRegNum(String regNum);
 
-    /**
-     * ТС со всеми связями, которые нужны мапперам. Нужен для кэширования:
-     * сущность с ленивыми прокси после закрытия сессии больше не читается.
-     */
     @Query("""
     SELECT v FROM Vehicle v
     JOIN FETCH v.brand

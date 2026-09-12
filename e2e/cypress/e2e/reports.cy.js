@@ -21,7 +21,7 @@ describe('Отчёты', () => {
   it('Открытие формы для создания отчёта', () => {
     cy.get('h1').should('contain', 'Создание отчёта');
     cy.get('#reportForm').should('exist');
-    cy.get('#reportType option').should('have.length', 4); // плейсхолдер + 3 типа
+    cy.get('#reportType option').should('have.length', 4);
     cy.get('#vehicleId option').should('have.length.at.least', 2);
     cy.get('#enterpriseId option').should('have.length.at.least', 2);
   });

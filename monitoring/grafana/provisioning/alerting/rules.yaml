@@ -1,7 +1,6 @@
 apiVersion: 1
 
 groups:
-  # ────────────────────────────────────────────────────────────────────────────
   - orgId: 1
     name: car_park_availability
     folder: car_park
@@ -99,8 +98,6 @@ groups:
           description: "Пользователи ничего не замечают, но если лежит loki или promtail, то все правила по логам Postgres слепнут."
           runbook: "docker compose ps; docker compose logs --tail=100 {{ $labels.job }}"
 
-      # Dead-man's switch. Одно письмо в сутки доказывает, что жива вся цепочка
-      # «оценка правила → политика → SMTP». Если писем нет — мёртв сам алертинг.
       - uid: cp-watchdog
         title: "Watchdog"
         condition: C
@@ -545,8 +542,6 @@ groups:
           description: "Держится больше 10 минут, то есть это не прогрев JIT и пула после деплоя. Правило молчит первые сутки после потери данных Prometheus — на этот случай есть абсолютный порог «p95 выше 2 секунд»."
           runbook: "Дашборд → панель «Латентность эндпоинтов», кликнуть по exemplar и провалиться в трейс; затем Explore → Loki {compose_service=\"db\"} |= `duration:` — медленные запросы Postgres (log_min_duration_statement=1000)."
 
-      # Абсолютный порог: работает с первого дня, переживает потерю данных Prometheus.
-      # 2 с — верхний сконфигурированный SLO-бакет, то есть измеряется точно.
       - uid: cp-latency-severe
         title: "p95 выше 2 секунд"
         condition: E
@@ -617,8 +612,6 @@ groups:
           description: "Каждый двадцатый запрос дольше двух секунд — пользователи это уже видят."
           runbook: "Дашборд → «Латентность эндпоинтов» и «Пул соединений»; Explore → Tempo за тот же интервал; Explore → Loki {compose_service=\"db\"}."
 
-      # Пост говорит: скачок p95 значит, что БД вот-вот рухнет. Очередь за соединением —
-      # то же событие на шаг раньше и без статистического сглаживания.
       - uid: cp-hikari-exhausted
         title: "Пул соединений к БД исчерпан"
         condition: C
@@ -667,15 +660,11 @@ groups:
           description: "Пять минут подряд потоки ждут соединение. Это опережающий индикатор: правила по p95 сработают следом."
           runbook: "Дашборд → «Пул HikariCP»; Explore → Loki {compose_service=\"db\"} — искать долгие запросы и блокировки (log_lock_waits=on)."
 
-  # ────────────────────────────────────────────────────────────────────────────
-  # Класс 1: SQL-ошибки Postgres
   - orgId: 1
     name: postgres_logs
     folder: car_park
     interval: 1m
     rules:
-      # PANIC означает, что Postgres аварийно оборвал все сессии и перезапускается.
-      # Порогов тут нет и ждать нечего.
       - uid: pg-panic
         title: "Postgres: PANIC в логах"
         condition: C
@@ -721,11 +710,6 @@ groups:
           description: "База аварийно завершила работу и перезапускается. Все открытые сессии оборваны."
           runbook: "docker compose logs --tail=200 db; Explore → Loki {compose_service=\"db\"} | pg_severity=\"PANIC\"; проверить место на диске (df -h) и память."
 
-      # Считать критичным ЛЮБОЙ FATAL — ошибка: Postgres пишет FATAL на рутинные вещи
-      # (password authentication failed, the database system is starting up — на каждый
-      # рестарт контейнера). Такое правило будило бы на каждый деплой, и через неделю
-      # алертинг бы просто выключили. Regex оставляет только «база действительно падает».
-      # Всё остальное ловит правило ниже, но только когда становится закономерностью.
       - uid: pg-fatal-critical
         title: "Postgres: FATAL, база отказывает"
         condition: C
@@ -816,8 +800,6 @@ groups:
           description: "Единичный FATAL — норма (рестарт контейнера, разрыв соединения). Пять за 15 минут — это либо неудачная ротация учётных данных, либо перебор паролей: порт 6432 опубликован наружу."
           runbook: "Explore → Loki {compose_service=\"db\"} | pg_severity=\"FATAL\" — посмотреть текст и источник."
 
-      # Здоровое JPA-приложение даёт ноль Postgres ERROR в стабильном состоянии.
-      # Благодаря log_min_error_statement=error виноватый SQL лежит строкой ниже в Loki.
       - uid: pg-error-rate
         title: "Postgres: поток SQL-ошибок"
         condition: C
@@ -905,10 +887,6 @@ groups:
           summary: "За 30 минут Postgres записал {{ $values.B }} ошибок"
           description: "Есть SQL ошибки за последние 30 минут."
 
-      # Страж самого сбора логов: с log_checkpoints=on Postgres пишет минимум одну строку
-      # за checkpoint_timeout (5 минут). Полная тишина полчаса означает, что либо базы нет,
-      # либо — что коварнее — promtail перестал её находить после пересоздания контейнера.
-      # Без этого правила все правила выше отказывают молча.
       - uid: pg-log-silence
         title: "Postgres: логи перестали поступать"
         condition: C
@@ -942,7 +920,6 @@ groups:
               type: math
               expression: '$B < 1'
               datasource: {type: __expr__, uid: __expr__}
-        # отсутствие данных здесь и есть сигнал, поэтому Alerting, а не OK
         noDataState: Alerting
         execErrState: Alerting
         for: 10m
@@ -955,17 +932,11 @@ groups:
           description: "Все правила по SQL-ошибкам сейчас слепы. Скорее всего promtail потерял контейнер db после пересоздания."
           runbook: "docker compose logs --tail=50 promtail; docker compose restart promtail; проверить {compose_service=\"db\"} в Explore → Loki."
 
-  # ────────────────────────────────────────────────────────────────────────────
   - orgId: 1
     name: alerting_selftest
     folder: car_park
     interval: 1m
     rules:
-      # Постоянная безопасная проверка КРИТИЧЕСКОГО маршрута целиком:
-      # Loki → правило → политика → вебхук в Telegram → SMTP → почта.
-      # Вызвать настоящий PANIC нельзя, а это — всегда:
-      #   docker compose exec -T db psql -U "$DB_USER" -d "$DB_NAME" \
-      #     -c 'select 1 from "ALERT_DRILL_check_the_pager";'
       - uid: cp-alert-drill
         title: "Учебная тревога"
         condition: C

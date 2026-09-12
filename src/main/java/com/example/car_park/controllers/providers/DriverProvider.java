@@ -67,9 +67,6 @@ public class DriverProvider {
             .filter(d -> ids.contains(d.getId()))
             .toList();
         s.checkAllBelongs(belongingToManager, ids);
-        // Граф менеджера приходит из UserDetailsService и уже detached, поэтому
-        // возвращаем водителей, загруженных репозиторием: они управляемые, и их
-        // можно менять и связывать с новыми сущностями
         return all;
     }
 

@@ -65,7 +65,7 @@ describe('Транспортные средства', () => {
     it('Открытие страницы для создания', () => {
       cy.get('h1').should('contain', 'Добавить транспортное средство');
       cy.get('#regNum').should('be.empty');
-      cy.get('#brand option').should('have.length.at.least', 2); // плейсхолдер + бренды
+      cy.get('#brand option').should('have.length.at.least', 2);
       cy.get('#drivers option').should('have.length.at.least', 1);
       cy.get('#activeDriver').should('be.disabled');
     });
@@ -82,7 +82,7 @@ describe('Транспортные средства', () => {
 
     it('Попытка отправить с ценой ниже минимальной', () => {
       cy.get('#regNum').type('E2E001');
-      cy.get('#price').type('1000'); // min=100000
+      cy.get('#price').type('1000');
       cy.get('button[type="submit"]').click();
 
       cy.get('#price').then(($input) => {

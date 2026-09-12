@@ -52,8 +52,6 @@
         </div>
         <div class="col-md-6">
             <label for="brand" class="form-label">Бренд</label>
-            <!-- th:field здесь не годится: поле формы имеет тип BrandEditDto, и Thymeleaf
-                 сравнивал бы value опции с toString() объекта, поэтому отмечаем выбранное вручную -->
             <select name="brand" class="form-select" id="brand" required>
                 <option value="">Выберите бренд</option>
                 <option th:each="brand : ${brands}" th:value="${brand.id}" th:text="${brand.name}"
@@ -87,62 +85,50 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Инициализация bootstrap-select
         $('.selectpicker').selectpicker();
 
         const activeDriverSelect = $('#activeDriver');
         const driversSelect = $('#drivers');
         const allPretendents = new Set();
 
-        // Сохраняем список всех возможных активных водителей
         activeDriverSelect.find('option').each(function() {
-            if ($(this).val()) {  // Пропускаем пустое значение
+            if ($(this).val()) {
                 allPretendents.add($(this).val());
             }
         });
 
-        // Функция для обновления списка активных водителей
         function updateActiveDriverOptions() {
             const selectedDrivers = driversSelect.val() || [];
-            const currentActiveDriver = activeDriverSelect.data('current-value'); // Получаем текущее значение
+            const currentActiveDriver = activeDriverSelect.data('current-value');
 
-            // Очищаем текущий выбор активного водителя
             activeDriverSelect.val('');
 
-            // Если водители не выбраны, блокируем выбор активного водителя
             if (selectedDrivers.length === 0) {
                 activeDriverSelect.prop('disabled', true);
                 activeDriverSelect.find('option:not(:first)').hide();
                 return;
             }
 
-            // Разблокируем выбор активного водителя
             activeDriverSelect.prop('disabled', false);
 
-            // Скрываем все опции кроме первой (placeholder)
             activeDriverSelect.find('option:not(:first)').hide();
 
-            // Показываем только опции, которые есть в списке претендентов и в выбранных водителях
             selectedDrivers.forEach(driverId => {
                 if (allPretendents.has(driverId)) {
                     activeDriverSelect.find(`option[value="${driverId}"]`).show();
                 }
             });
 
-            // Устанавливаем значение по умолчанию, если оно есть
             if (currentActiveDriver && selectedDrivers.includes(currentActiveDriver)) {
                 activeDriverSelect.val(currentActiveDriver);
             }
         }
 
-        // Обновляем список активных водителей при изменении списка водителей
         driversSelect.on('changed.bs.select', updateActiveDriverOptions);
 
-        // Устанавливаем текущее значение активного водителя
         const initialActiveDriver = activeDriverSelect.val();
         activeDriverSelect.data('current-value', initialActiveDriver);
 
-        // Обновляем список активных водителей при загрузке страницы
         updateActiveDriverOptions();
     });
 </script>
@@ -152,13 +138,10 @@
         const utcString = input.dataset.utc;
 
         if (utcString) {
-            // Преобразуем UTC строку в Date объект
             const utcDate = new Date(utcString);
 
-            // Получаем локальное ISO без секунды и миллисекунд
             const localISO = utcDate.toISOString().slice(0, 16);
 
-            // Преобразуем UTC в локальное
             const offset = utcDate.getTimezoneOffset();
             const localDate = new Date(utcDate.getTime() - offset * 60 * 1000);
             const localValue = localDate.toISOString().slice(0, 16);
@@ -172,14 +155,12 @@
         const localInput = document.getElementById("datetimeInput");
         const hiddenInput = document.getElementById("purchaseDatetime");
 
-        const localValue = localInput.value; // Пример: "2025-08-04T18:30"
+        const localValue = localInput.value;
         if (!localValue) return;
 
-        // Создаём Date из локального значения
         const localDate = new Date(localValue);
 
-        // Получаем ISO строку в UTC (с "Z" в конце)
-        const utcISOString = localDate.toISOString(); // Пример: "2025-08-04T15:30:00.000Z"
+        const utcISOString = localDate.toISOString();
 
         hiddenInput.value = utcISOString;
     });

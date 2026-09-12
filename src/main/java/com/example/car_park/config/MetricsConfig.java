@@ -19,8 +19,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MetricsConfig {
 
-    // Без этих бинов аннотации @Timed и @Observed молча игнорируются:
-    // аспекты не поднимаются автоматически
     @Bean
     public TimedAspect timedAspect(MeterRegistry registry) {
         return new TimedAspect(registry);
@@ -31,7 +29,6 @@ public class MetricsConfig {
         return new ObservedAspect(registry);
     }
 
-    // Общий тег, чтобы при возврате backend-2 метрики реплик не сливались в одну серию
     @Bean
     public MeterRegistryCustomizer<MeterRegistry> commonTags(
         @Value("${INSTANCE_ID:backend-1}") String instanceId) {
@@ -39,10 +36,6 @@ public class MetricsConfig {
             .meterFilter(MeterFilter.commonTags(Tags.of("instance_id", instanceId)));
     }
 
-    // Бизнес-метрики: размер парка снимается с БД на каждый скрейп.
-    // count() — дешёвый запрос, скрейп идёт раз в 15 секунд.
-    // Имена без суффикса .total: клиент Prometheus всё равно срезает _total у гейджей,
-    // и в итоге серии называются car_park_vehicles / car_park_enterprises / car_park_trips
     @Bean
     public MeterBinder carParkBusinessMetrics(VehicleRepository vehicles,
                                               EnterpriseRepository enterprises,

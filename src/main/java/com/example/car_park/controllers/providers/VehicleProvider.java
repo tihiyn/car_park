@@ -146,8 +146,6 @@ public class VehicleProvider {
             .collect(Collectors.toSet()));
         Driver ad = findActiveDriverAmong(ds, dto.getActiveDriver() == null ? null : dto.getActiveDriver().getId());
         Vehicle v = m.createDtoToEntity(dto, b, e, ds, ad);
-        // Обратные стороны связей (Brand.vehicles, Driver.vehicles, Driver.activeVehicle)
-        // руками проставлять не нужно: владелец всех трёх связей — Vehicle
         r.save(v);
     }
 
@@ -181,14 +179,11 @@ public class VehicleProvider {
         // TODO: проверить, что будет если назначить водителя, который активен на другой машине
         Driver ad = findActiveDriverAmong(ds, dto.getActiveDriverId());
         Vehicle v = m.vehicleRequestDtoToVehicle(dto, b, e, ds, ad);
-        // Обратные стороны связей проставляются владельцем — самим Vehicle
         return r.save(v).getId();
     }
 
     @Transactional
     public void update(User u, VehicleEditDto dto) {
-        // проверяем права, но работаем с управляемой сущностью: findById отдаёт
-        // ТС из кэша, у него ленивые связи уже отвязаны от сессии
         findById(u, dto.getId());
         Vehicle existing = findByIdAttached(dto.getId());
         m.editDtoToEntity(dto, existing);
@@ -256,8 +251,6 @@ public class VehicleProvider {
     public void delete(User u, Long id) {
         findById(u, id);
         Vehicle v = findByIdAttached(id);
-        // Снимаем связи с обеих сторон: владелец — Vehicle, но пока в сессии висит
-        // Driver.activeVehicle, указывающий на удаляемую машину, flush падает
         Driver ad = v.getActiveDriver();
         if (ad != null) {
             ad.setActiveVehicle(null);
