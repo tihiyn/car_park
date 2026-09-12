@@ -8,6 +8,6 @@ import lombok.Data;
 public class VehicleState {
     private double lat;
     private double lon;
-    private double bearing; // направление, градусов
-    private double speed;   // скорость, км/ч
+    private double bearing;
+    private double speed;
 }

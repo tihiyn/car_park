@@ -8,10 +8,8 @@
 <body>
 
 <div class="container mt-5">
-    <!-- Заголовок -->
     <h2 class="text-center mb-4">Информация об автомобиле</h2>
 
-    <!-- Кнопка для отслеживания местоположения авто -->
     <a id="watchBtn"
        th:href="@{/vehicles/{id}/online-map(id=${vehicle.id})}"
        class="btn btn-primary position-absolute"
@@ -19,9 +17,7 @@
         Наблюдать
     </a>
 
-    <!-- Характеристики авто -->
     <form th:object="${vehicle}" method="post" class="row g-3">
-        <!-- Левая колонка -->
         <div class="col-md-6">
             <div class="mb-3">
                 <label class="form-label">Регистрационный номер</label>
@@ -45,7 +41,6 @@
             </div>
         </div>
 
-        <!-- Правая колонка -->
         <div class="col-md-6">
             <div class="mb-3">
                 <label class="form-label">Стоимость, ₽</label>
@@ -70,7 +65,6 @@
         </div>
 
         <div class="col-md-6">
-            <!-- Кнопки "Редактировать" и "К списку предприятий" -->
             <div class="mb-3 d-flex gap-2">
                 <a th:href="@{edit/{id}(id=${vehicle.id})}" class="btn btn-primary">Редактировать</a>
                 <a href="/api/ui/enterprises" class="btn btn-secondary">К списку предприятий</a>
@@ -122,17 +116,14 @@
             </button>
         </form>
 
-        <!-- Блок для отображения результата -->
         <div id="uploadStatus" class="mt-3"></div>
     </section>
 
 
-    <!-- скрытое поле с id авто -->
     <input type="hidden" id="vehicleId" th:value="${vehicle.id}"/>
 </div>
 
 <script>
-    // Перевод даты-времени покупки в таймзону клиента
     document.addEventListener("DOMContentLoaded", function () {
         const input = document.getElementById("purchaseDatetime");
         if (input && input.value) {
@@ -140,7 +131,6 @@
         }
     })
 
-    // Загрузка поездок
     document.getElementById('loadTrips').addEventListener('click', () => {
         const vehicleId = document.getElementById("vehicleId").value;
         const from = toUTCString(document.getElementById('fromDate').value);
@@ -150,17 +140,15 @@
             .then(res => res.text())
             .then(html => {
                 document.getElementById('trips').innerHTML = html;
-                initTripsBlock(); // сразу активируем даты + кнопку
+                initTripsBlock();
             });
     });
 
-    // Перевод даты-времени из клиентского в UTC
     function toUTCString(localDateTimeStr) {
         const localDate = new Date(localDateTimeStr);
         return localDate.toISOString();
     }
 
-    // Функция конвертации дат-времени начала и конца поездки
     function convertTripDates() {
         document.querySelectorAll(".beginTS").forEach(el => {
             if (el.textContent) {
@@ -174,7 +162,6 @@
         });
     }
 
-    // Подключение обработчиков внутри блока trips
     function initTripsBlock() {
         convertTripDates();
 
@@ -189,11 +176,9 @@
                     return;
                 }
 
-                // Формируем query string: ?ids=12,15,27
                 const params = new URLSearchParams();
                 params.set("ids", selected.join(","));
 
-                // Переход на страницу с картой
                 window.location.href = "/map.html?" + params.toString();
             });
         }

@@ -13,7 +13,6 @@
     <h1 class="mb-4">Создание отчёта</h1>
 
     <form id="reportForm" method="get" action="">
-        <!-- Тип отчёта -->
         <div class="mb-3">
             <label for="reportType" class="form-label">Тип отчёта<span class="text-danger">*</span></label>
             <select id="reportType" name="reportType" class="form-select" required>
@@ -24,7 +23,6 @@
             </select>
         </div>
 
-        <!-- mileage -->
         <div class="report-fields" data-report-type="mileage">
             <div class="mb-3">
                 <label for="vehicleId" class="form-label">Номер авто<span class="text-danger">*</span></label>
@@ -60,7 +58,6 @@
             </div>
         </div>
 
-        <!-- enterpriseVehicles -->
         <div class="report-fields" data-report-type="enterpriseVehicles">
             <div class="mb-3">
                 <label for="enterpriseId" class="form-label">Название предприятия<span class="text-danger">*</span></label>
@@ -84,7 +81,6 @@
             </div>
         </div>
 
-        <!-- enterpriseDrivers -->
         <div class="report-fields" data-report-type="enterpriseDrivers">
             <div class="mb-3">
                 <label for="enterpriseId2" class="form-label">Название предприятия<span class="text-danger">*</span></label>
@@ -123,8 +119,8 @@
                     group.style.display = "none";
                     group.querySelectorAll("input, select").forEach(el => {
                         if (el.name) {
-                            el.dataset.originalName = el.name; // запоминаем оригинальное имя
-                            el.removeAttribute("name"); // убираем, чтобы не отправлялось
+                            el.dataset.originalName = el.name;
+                            el.removeAttribute("name");
                         }
                         el.required = false;
                     });
@@ -135,7 +131,6 @@
         reportTypeSelect.removeAttribute("name");
         reportTypeSelect.addEventListener("change", updateFields);
 
-        // при загрузке сразу применим
         updateFields();
     });
 
@@ -149,7 +144,6 @@
             this.action = '/api/ui/reports/enterprise/salary';
         }
 
-        // преобразуем даты для mileage
         function toLocalISOString(date) {
             const tzOffset = -date.getTimezoneOffset();
             const sign = tzOffset >= 0 ? "+" : "-";

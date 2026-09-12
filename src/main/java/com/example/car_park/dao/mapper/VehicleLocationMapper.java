@@ -34,7 +34,7 @@ public interface VehicleLocationMapper {
             Point p = loc.getLocation();
             Map<String, Object> geometry = Map.of(
                     "type", "Point",
-                    "coordinates", List.of(p.getX(), p.getY()) // X=долгота, Y=широта
+                    "coordinates", List.of(p.getX(), p.getY())
             );
             Map<String, Object> properties = new LinkedHashMap<>();
             properties.put("name", loc.getTimestamp().withZoneSameInstant(timeZone));

@@ -10,7 +10,7 @@
           crossorigin="anonymous">
     <style>
         .vehicle-badge {
-            padding-right: 1.5rem; /* Увеличиваем отступ справа для крестика */
+            padding-right: 1.5rem;
             display: inline-flex;
             align-items: center;
             position: relative;
@@ -26,7 +26,7 @@
             line-height: 1;
         }
         th:nth-child(5), td:nth-child(5) {
-            width: 15%; /* Увеличиваем ширину столбца "Часовой пояс" */
+            width: 15%;
         }
     </style>
 </head>
@@ -98,7 +98,7 @@
             method: 'DELETE'
         }).then(response => {
             if (response.ok) {
-                location.reload(); // Обновить страницу после успешного удаления
+                location.reload();
             } else {
                 alert("Ошибка при удалении транспортного средства.");
             }

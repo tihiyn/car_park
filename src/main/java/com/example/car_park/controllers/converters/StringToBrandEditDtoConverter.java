@@ -5,10 +5,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
-/**
- * Формы создания и редактирования ТС отправляют бренд как id в теле формы
- * (option value="1"), а поле DTO имеет тип BrandEditDto.
- */
 @Component
 public class StringToBrandEditDtoConverter implements Converter<String, VehicleEditDto.BrandEditDto> {
 

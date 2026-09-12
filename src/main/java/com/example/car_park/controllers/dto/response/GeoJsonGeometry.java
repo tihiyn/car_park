@@ -18,5 +18,5 @@ public class GeoJsonGeometry {
             description = "Координаты в порядке [долгота, широта]",
             example = "[[45.018758, 53.195873], [45.031122, 53.212345]]"
     )
-    private List<List<Double>> coordinates; // [ [lon, lat], [lon, lat], ... ]
+    private List<List<Double>> coordinates;
 }

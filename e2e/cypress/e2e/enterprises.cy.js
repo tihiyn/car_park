@@ -14,8 +14,8 @@ describe('Предприятия', () => {
     cy.get('tbody tr').should('have.length.at.least', 1);
     cy.get('tbody tr').first().within(() => {
       cy.get('.timezone-select').should('exist');
-      cy.get('.badge.bg-primary').should('have.length.at.least', 1); // водители
-      cy.get('.vehicle-badge').should('have.length.at.least', 1); // ТС
+      cy.get('.badge.bg-primary').should('have.length.at.least', 1);
+      cy.get('.vehicle-badge').should('have.length.at.least', 1);
     });
   });
 

@@ -52,8 +52,6 @@ public class ReportProvider {
         return rs.buildVehicleMileageReport(v, ts, p, s, b);
     }
 
-    // Книгу здесь не закрываем: её ещё предстоит записать в ответ.
-    // Закрытие — на вызывающей стороне, в контроллере
     public Workbook exportVehicleMileageReport(User u, Long vId, Period p, ZonedDateTime s, ZonedDateTime b) {
         VehicleMileageReport r = buildVehicleMileageReport(u, vId, p, s, b);
         return rs.fillVehicleMileageReportFile(r, new XSSFWorkbook());
@@ -61,7 +59,6 @@ public class ReportProvider {
 
     @Transactional(readOnly = true)
     public ProductionYearReport buildProductionYearReport(User u, Long eId, Integer sYear, Integer bYear) {
-        // отчёт обходит e.getVehicles(), поэтому нужна управляемая сущность
         Enterprise e = ep.findByIdAttached(u, eId);
         return rs.buildProductionYearReport(e, sYear, bYear);
     }
@@ -73,7 +70,6 @@ public class ReportProvider {
 
     @Transactional(readOnly = true)
     public AverageSalaryReport buildAverageSalaryReport(User u, Long eId) {
-        // отчёт обходит e.getDrivers(), поэтому нужна управляемая сущность
         Enterprise e = ep.findByIdAttached(u, eId);
         return rs.buildAverageSalaryReport(e);
     }

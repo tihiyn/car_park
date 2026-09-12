@@ -24,7 +24,6 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // получаем выбранные ID из URL
         const params = new URLSearchParams(window.location.search);
         const ids = params.get("ids")?.split(",") || [];
 

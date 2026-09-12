@@ -171,24 +171,19 @@ public class BatchConfig {
     ) {
         FlatFileItemWriter<TripCsvExportDto> writer = new FlatFileItemWriter<>();
 
-        // Путь к выходному файлу
         writer.setResource(new FileSystemResource(path));
 
-        // Перезапись файла если он существует
         writer.setShouldDeleteIfExists(true);
 
-        // Заголовок файла
         writer.setHeaderCallback(writer1 -> writer1.write("ENTERPRISE_ID,NAME,CITY,REGISTRATION_NUMBER,TIME_ZONE," +
                 "VEHICLE_ID,REG_NUM,PRICE,MILEAGE,PRODUCTION_YEAR,COLOR,IS_AVAILABLE,PURCHASE_DATETIME," +
                 "TRIP_ID,BEGIN,END," +
                 "START_VEHICLE_LOCATION_ID,START_LOCATION,START_TIMESTAMP," +
                 "END_VEHICLE_LOCATION_ID,END_LOCATION,END_TIMESTAMP"));
 
-        // Форматирование строк
         DelimitedLineAggregator<TripCsvExportDto> lineAggregator = new DelimitedLineAggregator<>();
         lineAggregator.setDelimiter(",");
 
-        // Извлечение полей из объекта
         BeanWrapperFieldExtractor<TripCsvExportDto> fieldExtractor = new BeanWrapperFieldExtractor<>();
         fieldExtractor.setNames(new String[]{
                 "enterpriseId",
@@ -228,14 +223,13 @@ public class BatchConfig {
     @Bean
     public ItemProcessor<Trip, EnterpriseExportDto> jsonProcessor() {
         Map<Long, EnterpriseExportDto> enterpriseCache = new HashMap<>();
-        Map<Long, Set<Long>> enterpriseVehicleIds = new HashMap<>(); // id автомобилей для каждого предприятия
+        Map<Long, Set<Long>> enterpriseVehicleIds = new HashMap<>();
 
         return trip -> {
             Vehicle vehicle = trip.getVehicle();
             Enterprise enterprise = vehicle.getEnterprise();
             ZoneId zone = enterprise.getTimeZone();
 
-            // Получаем или создаём Enterprise DTO
             EnterpriseExportDto enterpriseDto = enterpriseCache.computeIfAbsent(
                     enterprise.getId(),
                     id -> new EnterpriseExportDto()
@@ -247,12 +241,10 @@ public class BatchConfig {
                             .setVehicles(new ArrayList<>())
             );
 
-            // Инициализируем Set для автомобилей предприятия
             enterpriseVehicleIds.computeIfAbsent(enterprise.getId(), id -> new HashSet<>());
 
             EnterpriseExportDto.VehicleExportDto vehicleDto;
 
-            // Если автомобиль ещё не добавлен, создаём его
             if (!enterpriseVehicleIds.get(enterprise.getId()).contains(vehicle.getId())) {
                 vehicleDto = new EnterpriseExportDto.VehicleExportDto()
                         .setId(ID_CACHE.computeIfAbsent("vehicle" + vehicle.getId(), vId -> UUID.randomUUID()))
@@ -267,14 +259,12 @@ public class BatchConfig {
                 enterpriseDto.getVehicles().add(vehicleDto);
                 enterpriseVehicleIds.get(enterprise.getId()).add(vehicle.getId());
             } else {
-                // Иначе находим существующий Vehicle DTO
                 vehicleDto = enterpriseDto.getVehicles().stream()
                         .filter(v -> v.getId().equals(ID_CACHE.get("vehicle" + vehicle.getId())))
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException("Vehicle должен существовать"));
             }
 
-            // Добавляем поездку
             EnterpriseExportDto.VehicleExportDto.TripJsonExportDto tripDto = new EnterpriseExportDto.VehicleExportDto.TripJsonExportDto()
                     .setId(ID_CACHE.computeIfAbsent("trip" + trip.getId(), id -> UUID.randomUUID()))
                     .setBegin(trip.getBegin().withZoneSameInstant(zone).toString())
@@ -301,7 +291,6 @@ public class BatchConfig {
             @Value("#{jobParameters[path]}")String path
     ) {
         return items -> {
-            // Агрегируем дубли Enterprise
             Map<UUID, EnterpriseExportDto> aggregated = new ConcurrentHashMap<>();
 
             for (EnterpriseExportDto e : items) {
@@ -313,7 +302,6 @@ public class BatchConfig {
                                 .orElse(null);
 
                         if (existingVehicle != null) {
-                            // Объединяем поездки без дубликатов
                             Set<UUID> existingTripIds = existingVehicle.getTrips().stream()
                                     .map(EnterpriseExportDto.VehicleExportDto.TripJsonExportDto::getId)
                                     .collect(Collectors.toSet());
@@ -322,7 +310,6 @@ public class BatchConfig {
                                     .filter(trip -> !existingTripIds.contains(trip.getId()))
                                     .forEach(trip -> existingVehicle.getTrips().add(trip));
                         } else {
-                            // Добавляем новую машину
                             oldE.getVehicles().add(vehicle);
                         }
                     }
@@ -383,14 +370,12 @@ public class BatchConfig {
     public ItemProcessor<EnterpriseExportDto, Enterprise> jsonImportProcessor() {
         return enterpriseDto -> {
             System.out.println("Start processing enterprise ID: " + enterpriseDto.getId());
-            // Проверяем наличие Enterprise
             Enterprise enterprise = new Enterprise()
                         .setName(enterpriseDto.getName())
                         .setCity(enterpriseDto.getCity())
                         .setRegistrationNumber(enterpriseDto.getRegistrationNumber())
                         .setTimeZone(enterpriseDto.getTimeZone());
 
-            // Сопоставляем машины
             for (EnterpriseExportDto.VehicleExportDto vehicleDto : enterpriseDto.getVehicles()) {
                 Vehicle vehicle = new Vehicle()
                             .setEnterprise(enterprise);
@@ -402,7 +387,6 @@ public class BatchConfig {
                 vehicle.setAvailable(vehicleDto.isAvailable());
                 vehicle.setPurchaseDatetime(ZonedDateTime.parse(vehicleDto.getPurchaseDatetime()));
 
-                // Добавляем поездки
                 for (EnterpriseExportDto.VehicleExportDto.TripJsonExportDto tripDto : vehicleDto.getTrips()) {
                     Trip trip = new Trip()
                                 .setVehicle(vehicle);
@@ -443,13 +427,11 @@ public class BatchConfig {
     }
 
     private Point parsePointFromString(String wktPoint) {
-        // Удаляем "POINT" и скобки, оставляем только числа
         String cleaned = wktPoint.replace("POINT", "")
                 .replace("(", "")
                 .replace(")", "")
                 .trim();
 
-        // Разделяем координаты по пробелу
         String[] coords = cleaned.split(" ");
 
         if (coords.length < 2) {
@@ -487,12 +469,10 @@ public class BatchConfig {
         FlatFileItemReader<TripCsvImportDto> reader = new FlatFileItemReader<>();
         reader.setResource(new FileSystemResource(path));
 
-        // Пропускаем заголовок
         reader.setLinesToSkip(1);
 
         DefaultLineMapper<TripCsvImportDto> lineMapper = new DefaultLineMapper<>();
 
-        // Разделитель — запятая
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
         tokenizer.setDelimiter(",");
         tokenizer.setNames(
@@ -518,7 +498,6 @@ public class BatchConfig {
     public ItemProcessor<TripCsvImportDto, Trip> csvImportProcessor() {
         return dto -> {
             System.out.println("Start processing enterprise ID: " + dto.getEnterpriseId());
-            // 1. Предприятие
             Enterprise enterprise = enterpriseRepository.findByRegistrationNumber(dto.getRegistrationNumber())
                     .orElseGet(() -> {
                         Enterprise e = new Enterprise();
@@ -529,7 +508,6 @@ public class BatchConfig {
                         return enterpriseRepository.save(e);
                     });
 
-            // 2. Машина
             Vehicle vehicle = vehicleRepository.findByRegNum(dto.getRegNum())
                     .orElseGet(() -> {
                         Vehicle v = new Vehicle();
@@ -546,8 +524,6 @@ public class BatchConfig {
 
             enterprise.getVehicles().add(vehicle);
 
-
-            // 3. Локации
             VehicleLocation start = vehicleLocationRepository.findById(dto.getStartVehicleLocationId())
                     .orElseGet(() -> {
                         VehicleLocation loc = new VehicleLocation();
@@ -566,7 +542,6 @@ public class BatchConfig {
                         return loc;
                     });
 
-            // 4. Поездка
             Trip trip = tripRepository.findById(dto.getTripId())
                     .orElseGet(Trip::new);
 
